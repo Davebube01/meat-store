@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/CHIMDIEBUBE.A_SYDANI/Desktop/meat-store/meat-srore/src/app/admin/layout.tsx"],"sourcesContent":["import { AdminSidebar } from \"@/components/admin/AdminSidebar\";\r\nimport { AdminHeader } from \"@/components/admin/AdminHeader\";\r\n\r\nexport default function Layout({\r\n  children,\r\n}: {\r\n  children: React.ReactNode;\r\n}) {\r\n  return (\r\n      <main className=\"\">{children}</main>\r\n  );\r\n}\r\n"],"names":[],"mappings":";;;;;;AAGe,SAAS,OAAO,EAC7B,QAAQ,EAGT;IACC,qBACI,8OAAC;QAAK,WAAU;kBAAI;;;;;;AAE1B"}}]
+}
