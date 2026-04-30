@@ -14,7 +14,7 @@ import { useOrderStatus, useSimulateWebhook } from "@/core/hooks/usePayment";
 import { OrderStatus } from "@/core/api/user/orders";
 import { useCheckoutStore } from "@/core/store/useCheckoutStore";
 import { cn } from "@/lib/utils";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 
 // ─── Status Step Config ─────────────────────────────────────────────────────
 const STATUS_STEPS: {

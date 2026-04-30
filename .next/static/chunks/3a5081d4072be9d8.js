@@ -1,0 +1,1 @@
+(globalThis.TURBOPACK||(globalThis.TURBOPACK=[])).push(["object"==typeof document?document.currentScript:void 0,27498,t=>{"use strict";var e=t.i(76166);let i=async(t,i)=>(0,e.fetchClient)(i?"/api/v1/auth/login/json":"/api/v1/auth/register",{method:"POST",body:JSON.stringify(t)}),a=async()=>(0,e.fetchClient)("/api/v1/auth/me");t.s(["authenticateUser",0,i,"getUserMe",0,a])}]);
