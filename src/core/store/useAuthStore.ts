@@ -18,7 +18,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isAdmin: boolean;
   user: User | null;
-  setAuth: (token: string, user: User) => void;
+  setAuth: (token: string, user: User | null) => void;
   signOut: () => void;
   updateProfile: (user: Partial<User>) => void;
 }
@@ -36,7 +36,7 @@ export const useAuthStore = create<AuthState>()(
           token,
           user,
           isAuthenticated: true,
-          isAdmin: !!user.is_superuser
+          isAdmin: !!user?.is_superuser
         }),
 
       signOut: () =>

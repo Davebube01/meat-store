@@ -32,8 +32,10 @@ const fetchClient = async (endpoint, options = {})=>{
         headers
     });
     if (!res.ok) {
-        const errorBody = await res.json().catch(()=>({}));
-        throw new Error(errorBody.detail || `Request failed with status ${res.status}`);
+        if ("TURBOPACK compile-time falsy", 0) //TURBOPACK unreachable
+        ;
+        const { handleApiResponseError } = await __turbopack_context__.A("[project]/src/core/errors/errorHandler.ts [app-ssr] (ecmascript, async loader)");
+        await handleApiResponseError(res);
     }
     return res.json();
 };
@@ -231,7 +233,10 @@ const uploadAdminImage = async (file)=>{
         },
         body: formData
     });
-    if (!res.ok) throw new Error('Failed to upload image');
+    if (!res.ok) {
+        const { handleApiResponseError } = await __turbopack_context__.A("[project]/src/core/errors/errorHandler.ts [app-ssr] (ecmascript, async loader)");
+        await handleApiResponseError(res);
+    }
     const data = await res.json();
     return `${__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$core$2f$api$2f$client$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["API_BASE_URL"]}${data.imageUrl}`;
 };

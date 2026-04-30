@@ -39,6 +39,9 @@ export function SignInModal({ children }: SignInModalProps) {
       
       const data = await authenticateUser(formData, true);
       
+      // Store token FIRST so getAuthHeader() works for the next call
+      setAuth(data.access_token, null);
+
       const user = await getUserMe();
       setAuth(data.access_token, user);
       
@@ -91,7 +94,7 @@ export function SignInModal({ children }: SignInModalProps) {
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="absolute right-3 top-2 border-none"
+                className="absolute right-3 top-2 border-none cursor-pointer"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? (

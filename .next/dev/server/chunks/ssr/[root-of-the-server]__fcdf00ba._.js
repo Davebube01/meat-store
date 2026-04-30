@@ -779,7 +779,7 @@ const useAuthStore = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_mo
                 token,
                 user,
                 isAuthenticated: true,
-                isAdmin: !!user.is_superuser
+                isAdmin: !!user?.is_superuser
             }),
         signOut: ()=>set({
                 token: null,
