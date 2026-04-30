@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useAuthStore } from "@/core/store/useAuthStore";
 import { LogOut } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
@@ -17,11 +17,11 @@ export default function SettingsPage() {
           Settings
         </h1>
         <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Link href="/" className="hover:text-[#FF6B35]">
+          <Link href="/" className="hover:text-[#22c55e]">
             Home
           </Link>
           <span>/</span>
-          <Link href="/profile" className="hover:text-[#FF6B35]">
+          <Link href="/profile" className="hover:text-[#22c55e]">
             Profile
           </Link>
           <span>/</span>
@@ -31,7 +31,7 @@ export default function SettingsPage() {
 
       <div className="space-y-8">
         {/* Notifications */}
-        <section className="bg-white rounded-3xl p-6 shadow-sm border border-orange-100/50 space-y-6">
+        <section className="bg-white rounded-3xl p-6 shadow-sm border border-green-100/50 space-y-6">
           <h2 className="text-xl font-bold text-gray-900">Notifications</h2>
 
           <div className="space-y-4">
@@ -60,7 +60,7 @@ export default function SettingsPage() {
         </section>
 
         {/* Account Actions */}
-        <section className="bg-white rounded-3xl p-6 shadow-sm border border-orange-100/50 space-y-6">
+        <section className="bg-white rounded-3xl p-6 shadow-sm border border-green-100/50 space-y-6">
           <h2 className="text-xl font-bold text-gray-900">Account</h2>
 
           <div className="space-y-4">

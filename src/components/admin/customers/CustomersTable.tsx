@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Customer } from "@/data/customers";
+import { Customer } from "@/core/api";
 import Link from "next/link";
 import {
   Table,
@@ -102,7 +102,7 @@ export function CustomersTable({ customers }: CustomersTableProps) {
       </div>
 
       {/* Table Section */}
-      <Card className="border-t-4 border-t-indigo-500 shadow-sm">
+      <Card className="border-t-4 border-t-green-600 shadow-sm">
         <CardHeader className="border-b bg-muted/30 pb-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -188,7 +188,7 @@ export function CustomersTable({ customers }: CustomersTableProps) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="group-hover:opacity-100 transition-opacity gap-1  hover:text-primary  bg-amber-600 text-white"
+                          className="group-hover:opacity-100 transition-opacity gap-1  hover:bg-green-700/80  bg-green-700 text-white hover:text-white"
                         >
                           View Profile
                           <ExternalLink className="h-3 w-3" />

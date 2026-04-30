@@ -1,42 +1,73 @@
 "use client";
 
-import { Bell, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { useAuthStore } from "../../core/store/useAuthStore";
+import { Menu, User, Bell, Search } from "lucide-react";
+import { usePathname } from "next/navigation";
 
+interface AdminHeaderProps {
+  onMenuClick: () => void;
+}
 
-export function AdminHeader() {
+export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
+  const { user } = useAuthStore();
+  const pathname = usePathname();
+  
+  // Simple breadcrumb logic
+  const pathParts = pathname.split('/').filter(Boolean).slice(1); // skip 'admin'
+  const currentPath = pathParts[pathParts.length - 1] || 'Dashboard';
+  const capitalizedPath = currentPath.charAt(0).toUpperCase() + currentPath.slice(1);
+
   return (
-    <header className="h-16 flex items-center justify-between gap-4 px-6 bg-white border-b border-gray-100 lg:pl-[272px]">
-      <div className="flex-1 max-w-md hidden md:block">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search..."
-            className="pl-9 bg-gray-50 border-transparent focus:bg-white transition-colors rounded-xl"
-          />
+    <header className="h-16 lg:h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-30">
+      <div className="flex items-center gap-4">
+        {/* Mobile Toggle */}
+        <button 
+          onClick={onMenuClick}
+          className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+
+        {/* Page Title / Breadcrumbs */}
+        <div className="hidden sm:block">
+          <h2 className="text-lg font-bold text-gray-900 tracking-tight">
+            {capitalizedPath}
+          </h2>
+          <p className="text-xs text-gray-400 font-medium">MeatStore / Admin / {capitalizedPath}</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-full text-gray-500 hover:text-gray-900"
-        >
-          <Bell className="h-5 w-5" />
-        </Button>
-        <div className="h-8 w-px bg-gray-100"></div>
-        <div className="flex items-center gap-3">
-          <div className="text-right hidden md:block">
-            <p className="text-sm font-medium text-gray-900">Admin User</p>
-            <p className="text-xs text-gray-500">Super Admin</p>
+      <div className="flex items-center gap-x-3 lg:gap-x-6">
+        {/* Search - Desktop */}
+        <div className="hidden md:flex items-center bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100 focus-within:ring-2 focus-within:ring-green-500/20 focus-within:border-green-500 transition-all">
+          <Search className="w-4 h-4 text-gray-400 mr-2" />
+          <input 
+            type="text" 
+            placeholder="Search everything..." 
+            className="bg-transparent border-none text-sm focus:ring-0 placeholder:text-gray-400 w-48 lg:w-64"
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-x-2">
+          <button className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all">
+            <Bell className="w-5 h-5" />
+          </button>
+          
+          <div className="h-8 w-px bg-gray-100 mx-1 hidden sm:block" />
+
+          {/* User Profile */}
+          <div className="flex items-center gap-x-3 pl-2">
+            <div className="hidden lg:block text-right">
+              <p className="text-sm font-bold text-gray-900 leading-none mb-1">
+                {user?.full_name || user?.email || "Admin User"}
+              </p>
+              <p className="text-[10px] uppercase font-bold text-green-600 tracking-wider">Super Administrator</p>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center border border-gray-200">
+              <User className="w-5 h-5 text-gray-500" />
+            </div>
           </div>
-          <Avatar className="h-8 w-8 border border-gray-200">
-            <AvatarImage src="https://github.com/shadcn.png" />
-            <AvatarFallback>AD</AvatarFallback>
-          </Avatar>
         </div>
       </div>
     </header>

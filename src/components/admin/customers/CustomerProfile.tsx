@@ -1,7 +1,7 @@
 "use client";
 
-import { Customer } from "@/data/customers";
-import { Order, OrderStatus } from "@/data/orders";
+import { Customer, Order } from "@/core/api";
+
 import {
   Card,
   CardContent,
@@ -40,15 +40,13 @@ interface CustomerProfileProps {
 export function CustomerProfile({ customer, orders }: CustomerProfileProps) {
   const getStatusColor = (status: Order["status"]) => {
     switch (status) {
-      case "placed":
+      case "pending":
         return "bg-secondary text-secondary-foreground border-secondary";
-      case "confirmed":
+      case "paid":
         return "bg-blue-500 text-white border-blue-500";
-      case "prepping":
-        return "bg-orange-500 text-white border-orange-500";
-      case "quality_check":
-        return "bg-yellow-500 text-white border-yellow-500";
-      case "out_for_delivery":
+      case "processing":
+        return "bg-green-500 text-white border-green-500";
+      case "shipped":
         return "bg-purple-500 text-white border-purple-500";
       case "delivered":
         return "bg-green-600 text-white border-green-600";
@@ -61,13 +59,13 @@ export function CustomerProfile({ customer, orders }: CustomerProfileProps) {
 
   const getStatusIcon = (status: Order["status"]) => {
     switch (status) {
-      case "placed":
+      case "pending":
         return Clock;
-      case "confirmed":
+      case "paid":
         return CheckCircle2;
-      case "prepping":
+      case "processing":
         return Package;
-      case "out_for_delivery":
+      case "shipped":
         return Truck;
       case "delivered":
         return CheckCircle2;
@@ -84,7 +82,7 @@ export function CustomerProfile({ customer, orders }: CustomerProfileProps) {
     <div className="space-y-6 animate-in fade-in-50 duration-500">
       {/* Header Banner */}
       <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-8 text-white">
+        <div className="bg-gradient-to-r from-green-700 to-green-600 px-6 py-8 text-white">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-4 w-full md:w-auto">
               <Link href="/admin/customers">
@@ -125,6 +123,7 @@ export function CustomerProfile({ customer, orders }: CustomerProfileProps) {
                 <p className="text-lg md:text-xl font-bold">
                   ₦{customer.totalSpent.toLocaleString()}
                 </p>
+
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 text-center flex-1 md:flex-none min-w-[100px]">
                 <p className="text-xs uppercase tracking-wider opacity-70 mb-1">
@@ -141,12 +140,12 @@ export function CustomerProfile({ customer, orders }: CustomerProfileProps) {
 
       <div className="grid gap-6 md:grid-cols-3">
         {/* Customer Info Card */}
-        <Card className="md:col-span-1 border-t-4 border-t-purple-500 shadow-sm h-fit">
+        <Card className="md:col-span-1 border-t-4 border-t-green-700 shadow-sm h-fit">
           <CardHeader className="border-b bg-muted/30 pb-4">
             <CardTitle className="flex items-center gap-2">
               <Badge
                 variant="outline"
-                className="h-8 w-8 rounded-full p-0 flex items-center justify-center border-purple-200 bg-purple-50 text-purple-600"
+                className="h-8 w-8 rounded-full p-0 flex items-center justify-center border-green-200 bg-green-50 text-green-600"
               >
                 <MapPin className="h-4 w-4" />
               </Badge>
@@ -157,7 +156,7 @@ export function CustomerProfile({ customer, orders }: CustomerProfileProps) {
             <div className="space-y-4">
               <div className="group flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
                 <div className="mt-1">
-                  <Mail className="h-5 w-5 text-muted-foreground group-hover:text-purple-600 transition-colors" />
+                  <Mail className="h-5 w-5 text-muted-foreground group-hover:text-green-700 transition-colors" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
@@ -169,7 +168,7 @@ export function CustomerProfile({ customer, orders }: CustomerProfileProps) {
 
               <div className="group flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
                 <div className="mt-1">
-                  <Phone className="h-5 w-5 text-muted-foreground group-hover:text-purple-600 transition-colors" />
+                  <Phone className="h-5 w-5 text-muted-foreground group-hover:text-green-700 transition-colors" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
@@ -181,7 +180,7 @@ export function CustomerProfile({ customer, orders }: CustomerProfileProps) {
 
               <div className="group flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
                 <div className="mt-1">
-                  <MapPin className="h-5 w-5 text-muted-foreground group-hover:text-purple-600 transition-colors" />
+                  <MapPin className="h-5 w-5 text-muted-foreground group-hover:text-green-700 transition-colors" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
@@ -193,7 +192,7 @@ export function CustomerProfile({ customer, orders }: CustomerProfileProps) {
 
               <div className="group flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
                 <div className="mt-1">
-                  <Calendar className="h-5 w-5 text-muted-foreground group-hover:text-purple-600 transition-colors" />
+                  <Calendar className="h-5 w-5 text-muted-foreground group-hover:text-green-700 transition-colors" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
@@ -212,19 +211,20 @@ export function CustomerProfile({ customer, orders }: CustomerProfileProps) {
 
             <Separator />
 
-            <div className="bg-purple-50 rounded-lg p-4 border border-purple-100">
+            <div className="bg-green-50 rounded-lg p-4 border border-green-100">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="h-4 w-4 text-purple-600" />
-                <span className="font-semibold text-purple-900">Insights</span>
+                <TrendingUp className="h-4 w-4 text-green-600" />
+                <span className="font-semibold text-green-900">Insights</span>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs text-purple-600/80">
+                  <p className="text-xs text-green-600/80">
                     Avg. Booking Value
                   </p>
-                  <p className="font-bold text-purple-900">
+                  <p className="font-bold text-green-900">
                     ₦{averageOrderValue.toLocaleString()}
                   </p>
+
                 </div>
               </div>
             </div>
@@ -287,9 +287,9 @@ export function CustomerProfile({ customer, orders }: CustomerProfileProps) {
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3.5 w-3.5" />
-                            {new Date(order.date).toLocaleDateString()}
+                            {new Date(order.created_at).toLocaleDateString()}
                           </span>
-                          <span>•</span>
+                          <span>â€¢</span>
                           <span className="flex items-center gap-1">
                             <Package className="h-3.5 w-3.5" />
                             {order.items.length}{" "}
@@ -301,8 +301,9 @@ export function CustomerProfile({ customer, orders }: CustomerProfileProps) {
                       <div className="flex items-center justify-between sm:justify-end gap-6 min-w-[200px]">
                         <div className="text-right">
                           <p className="font-bold text-base">
-                            ₦{order.total.toLocaleString()}
+                            ₦{order.total_amount.toLocaleString()}
                           </p>
+
                           <p className="text-xs text-muted-foreground">Total</p>
                         </div>
                         <Link href={`/admin/orders/${order.id}`}>

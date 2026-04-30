@@ -1,6 +1,6 @@
 "use client";
 
-import { useCart } from "@/store/useCart";
+import { useCart } from "@/core/store/useCart";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -8,6 +8,7 @@ import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { API_BASE_URL } from "@/core/api/client";
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, getCartTotal, clearCart } =
@@ -21,6 +22,12 @@ export default function CartPage() {
   const total = mounted ? getCartTotal() : 0;
   const deliveryFee = 2000;
   const finalTotal = total + deliveryFee;
+
+  const getFullImageUrl = (url: string | undefined) => {
+    if (!url) return "/placeholder.jpg";
+    if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:")) return url;
+    return `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+  };
 
   if (!mounted) return null;
 
@@ -45,7 +52,7 @@ export default function CartPage() {
               <Link href="/products">
                 <Button
                   size="lg"
-                  className="bg-[#FF6B35] hover:bg-[#E85D2A] text-white"
+                  className="bg-[#22c55e] hover:bg-[#16a34a] text-white"
                 >
                   Browse Products
                 </Button>
@@ -62,9 +69,10 @@ export default function CartPage() {
                   >
                     <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-gray-100">
                       <Image
-                        src={item.imageUrl}
+                        src={getFullImageUrl(item.image_url)}
                         alt={item.name}
                         fill
+                        unoptimized
                         className="object-cover"
                       />
                     </div>
@@ -155,7 +163,7 @@ export default function CartPage() {
                     </div>
                   </div>
 
-                  <Button className="w-full h-12 text-lg bg-[#FF6B35] hover:bg-[#E85D2A] text-white mb-4">
+                  <Button className="w-full h-12 text-lg bg-[#22c55e] hover:bg-[#16a34a] text-white mb-4">
                     Proceed to Checkout
                   </Button>
 

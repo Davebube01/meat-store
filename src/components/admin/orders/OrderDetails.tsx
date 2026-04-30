@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Order, OrderStatus } from "@/data/orders";
-import { Customer } from "@/data/customers";
+import { Order, OrderStatus, AdminOrderStatus, Customer } from "@/core/api";
+import { useUpdateOrderStatus, useSimulateWebhook } from "@/core/hooks/usePayment";
 import {
   Card,
   CardContent,
@@ -34,10 +34,14 @@ import {
   CreditCard,
   User,
   ShoppingBag,
+  Zap,
+  Loader2,
+  Store,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { API_BASE_URL } from "@/core/api/client";
 
 interface OrderDetailsProps {
   order: Order;
@@ -49,28 +53,32 @@ export function OrderDetails({
   customer,
 }: OrderDetailsProps) {
   const [order, setOrder] = useState(initialOrder);
-  const [loading, setLoading] = useState(false);
+  const isDev = process.env.NODE_ENV === "development";
 
-  const handleStatusUpdate = (newStatus: OrderStatus) => {
-    setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setOrder({ ...order, status: newStatus });
-      setLoading(false);
-    }, 500);
+  const updateMutation = useUpdateOrderStatus(order.id);
+  const simulateMutation = useSimulateWebhook(order.id);
+
+  const handleStatusUpdate = async (newStatus: OrderStatus) => {
+    updateMutation.mutate(newStatus, {
+      onSuccess: (updated) => setOrder(updated as any),
+    });
+  };
+
+  const getFullImageUrl = (url: string | undefined) => {
+    if (!url) return "/placeholder.jpg";
+    if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:")) return url;
+    return `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
   };
 
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
-      case "placed":
+      case "pending":
         return "bg-secondary text-secondary-foreground border-secondary";
-      case "confirmed":
+      case "paid":
         return "bg-blue-500 text-white border-blue-500";
-      case "prepping":
-        return "bg-orange-500 text-white border-orange-500";
-      case "quality_check":
-        return "bg-yellow-500 text-white border-yellow-500";
-      case "out_for_delivery":
+      case "processing":
+        return "bg-green-500 text-white border-green-500";
+      case "shipped":
         return "bg-purple-500 text-white border-purple-500";
       case "delivered":
         return "bg-green-600 text-white border-green-600";
@@ -81,12 +89,11 @@ export function OrderDetails({
     }
   };
 
-  const statusSteps: { status: OrderStatus; label: string; icon: any }[] = [
-    { status: "placed", label: "Placed", icon: Clock },
-    { status: "confirmed", label: "Confirmed", icon: CheckCircle2 },
-    { status: "prepping", label: "Prepping", icon: Package },
-    { status: "out_for_delivery", label: "Out for Delivery", icon: Truck },
-    { status: "delivered", label: "Delivered", icon: CheckCircle2 },
+  const statusSteps: { status: AdminOrderStatus; label: string; icon: any }[] = [
+    { status: "pending", label: "Pending", icon: Clock },
+    { status: "processing", label: "Processing", icon: Package },
+    { status: "in_transit", label: (order as any).delivery_method === 'pickup' ? "Ready for Pickup" : "Out for Delivery", icon: (order as any).delivery_method === 'pickup' ? Store : Truck },
+    { status: "delivered", label: (order as any).delivery_method === 'pickup' ? "Picked Up" : "Delivered", icon: CheckCircle2 },
   ];
 
   return (
@@ -123,13 +130,13 @@ export function OrderDetails({
               </div>
               <p className="text-inherit/80 font-medium">
                 Placed on{" "}
-                {new Date(order.date).toLocaleDateString(undefined, {
+                {new Date(order.created_at).toLocaleDateString(undefined, {
                   weekday: "long",
                   year: "numeric",
                   month: "long",
                   day: "numeric",
                 })}{" "}
-                at {new Date(order.date).toLocaleTimeString()}
+                at {new Date(order.created_at).toLocaleTimeString()}
               </p>
             </div>
           </div>
@@ -137,7 +144,7 @@ export function OrderDetails({
           <div className="flex items-center gap-2 bg-background/10 p-1 rounded-lg backdrop-blur-sm">
             <Select
               disabled={
-                loading ||
+                updateMutation.isPending ||
                 order.status === "cancelled" ||
                 order.status === "delivered"
               }
@@ -153,14 +160,10 @@ export function OrderDetails({
                 align="end"
                 className="animate-in zoom-in-95 duration-200"
               >
-                <SelectItem value="placed">Placed</SelectItem>
-                <SelectItem value="confirmed">Confirmed</SelectItem>
-                <SelectItem value="prepping">Prepping</SelectItem>
-                <SelectItem value="quality_check">Quality Check</SelectItem>
-                <SelectItem value="out_for_delivery">
-                  Out for Delivery
-                </SelectItem>
-                <SelectItem value="delivered">Delivered</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="processing">Processing</SelectItem>
+                <SelectItem value="in_transit">{(order as any).delivery_method === 'pickup' ? "Ready for Pickup" : "Out for Delivery"}</SelectItem>
+                <SelectItem value="delivered">{(order as any).delivery_method === 'pickup' ? "Confirm Picked Up" : "Delivered"}</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
@@ -191,30 +194,31 @@ export function OrderDetails({
                     <div className="relative h-20 w-20 overflow-hidden rounded-lg border bg-muted/50 p-1 group-hover:border-primary/50 transition-colors">
                       <div className="relative h-full w-full overflow-hidden rounded-md">
                         <Image
-                          src={item.imageUrl}
-                          alt={item.name}
+                          src={getFullImageUrl(item.product?.image_url)}
+                          alt={item.product?.name || "Product"}
                           fill
+                          unoptimized
                           className="object-cover transition-transform group-hover:scale-105"
                         />
                       </div>
                     </div>
                     <div className="flex-1 space-y-1">
                       <h4 className="font-semibold text-lg leading-none group-hover:text-primary transition-colors">
-                        {item.name}
+                        {item.product?.name || "Deleted Product"}
                       </h4>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium ring-1 ring-inset ring-gray-500/10">
-                          {item.selectedOption}
+                          {item.selected_option || "Standard"}
                         </span>
                         <span>x {item.quantity}</span>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-lg">
-                        ₦{(item.price * item.quantity).toLocaleString()}
+                        ₦{(item.price_at_time * item.quantity).toLocaleString()}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        ₦{item.price.toLocaleString()} / unit
+                        ₦{item.price_at_time.toLocaleString()} / unit
                       </p>
                     </div>
                   </div>
@@ -222,10 +226,10 @@ export function OrderDetails({
                 <Separator />
                 <div className="flex justify-between items-center pt-2">
                   <span className="text-muted-foreground font-medium">
-                    Subtotal
+                    Order Total
                   </span>
                   <span className="text-xl font-bold">
-                    ₦{order.total.toLocaleString()}
+                    ₦{order.total_amount.toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -324,7 +328,7 @@ export function OrderDetails({
                         Name
                       </p>
                       <p className="font-semibold text-foreground text-lg">
-                        {customer.name}
+                        {customer.full_name || customer.name}
                       </p>
                     </div>
                   </div>
@@ -356,19 +360,47 @@ export function OrderDetails({
                       </p>
                     </div>
                   </div>
-
-                  <Separator />
-
+                </>
+              ) : order.guest_info ? (
+                <>
                   <div className="flex items-start gap-3">
-                    <div className="mt-1 bg-purple-100 p-2 rounded-full text-purple-600">
-                      <MapPin className="w-4 h-4" />
+                    <div className="mt-1 bg-orange-100 p-2 rounded-full text-orange-600">
+                      <User className="w-4 h-4" />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
-                        Shipping Address
+                        Guest Name
                       </p>
-                      <p className="font-medium text-foreground leading-relaxed">
-                        {order.shippingAddress}
+                      <p className="font-semibold text-foreground text-lg">
+                        {order.guest_info.fullName}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <div className="mt-1 bg-orange-100 p-2 rounded-full text-orange-600">
+                      <Mail className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Email
+                      </p>
+                      <p className="font-medium text-foreground">
+                        {order.guest_info.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <div className="mt-1 bg-orange-100 p-2 rounded-full text-orange-600">
+                      <Phone className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Phone
+                      </p>
+                      <p className="font-medium text-foreground">
+                        {order.guest_info.phone}
                       </p>
                     </div>
                   </div>
@@ -379,6 +411,41 @@ export function OrderDetails({
                   <p>Customer information not available</p>
                 </div>
               )}
+
+              <Separator />
+
+              <div className="flex items-start gap-3">
+                <div className="mt-1 bg-blue-100 p-2 rounded-full text-blue-600">
+                  <MapPin className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Shipping Address
+                  </p>
+                  <p className="font-medium text-foreground leading-relaxed">
+                    {order.delivery?.address || "Address not specified"}
+                  </p>
+                  {order.delivery?.city && (
+                    <p className="text-sm text-muted-foreground">
+                      {order.delivery.city}, {order.delivery.state}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 mt-4">
+                <div className="mt-1 bg-green-100 p-2 rounded-full text-green-600">
+                  {(order as any).delivery_method === 'pickup' ? <Store className="w-4 h-4" /> : <Truck className="w-4 h-4" />}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Delivery Method
+                  </p>
+                  <p className="font-medium text-foreground leading-relaxed">
+                    {(order as any).delivery_method === 'pickup' ? "Store Pickup" : "Instant Delivery"}
+                  </p>
+                </div>
+              </div>
             </CardContent>
             {customer && (
               <CardFooter className="bg-muted/10 border-t pt-4">
@@ -405,7 +472,7 @@ export function OrderDetails({
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
-              <div className="flex items-center gap-4 p-4 rounded-lg bg-green-50/50 border border-green-100">
+                  <div className="flex items-center gap-4 p-4 rounded-lg bg-green-50/50 border border-green-100">
                 <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 shadow-sm">
                   <span className="font-bold text-lg">₦</span>
                 </div>
@@ -414,7 +481,7 @@ export function OrderDetails({
                     Total Amount
                   </p>
                   <p className="text-xl font-bold text-green-700">
-                    ₦{order.total.toLocaleString()}
+                    ₦{order.total_amount.toLocaleString()}
                   </p>
                 </div>
               </div>
@@ -422,18 +489,63 @@ export function OrderDetails({
               <div className="mt-4 space-y-3">
                 <div className="flex justify-between items-center py-2 border-b border-dashed">
                   <span className="text-muted-foreground">Payment Method</span>
-                  <span className="font-medium">{order.paymentMethod}</span>
+                  <span className="font-medium capitalize">{order.payment_method?.replace(/_/g, " ") || "Not Specified"}</span>
                 </div>
-                <div className="flex justify-between items-center py-2">
+                <div className="flex justify-between items-center py-2 border-b border-dashed">
                   <span className="text-muted-foreground">Payment Status</span>
                   <Badge
                     variant="outline"
-                    className="bg-green-50 text-green-700 border-green-200"
+                    className={cn(
+                      "capitalize",
+                      order.status === "pending" ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-green-50 text-green-700 border-green-200"
+                    )}
                   >
-                    Paid
+                    {order.status === "pending" ? "Pending" : "Paid"}
                   </Badge>
                 </div>
+                {(order as any).payment_reference && (
+                  <div className="flex justify-between items-center py-2 border-b border-dashed">
+                    <span className="text-muted-foreground">Reference</span>
+                    <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">
+                      {(order as any).payment_reference}
+                    </span>
+                  </div>
+                )}
+                {(order as any).paid_at && (
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-muted-foreground">Paid at</span>
+                    <span className="text-sm font-medium">
+                      {new Date((order as any).paid_at).toLocaleString()}
+                    </span>
+                  </div>
+                )}
               </div>
+
+              {/* Dev-only simulate webhook button */}
+              {isDev && (order as any).payment_reference && (
+                <div className="mt-4 rounded-lg border-2 border-dashed border-amber-300 bg-amber-50 p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Zap className="h-3.5 w-3.5 text-amber-600" />
+                    <span className="text-xs font-bold text-amber-700 uppercase tracking-wide">Dev Tool</span>
+                  </div>
+                  <p className="text-xs text-amber-600 mb-2">
+                    Simulate a Paystack webhook to mark this order as Processing.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-amber-400 text-amber-800 hover:bg-amber-100 text-xs h-7"
+                    disabled={simulateMutation.isPending}
+                    onClick={() => simulateMutation.mutate((order as any).payment_reference)}
+                  >
+                    {simulateMutation.isPending ? (
+                      <><Loader2 className="h-3 w-3 animate-spin mr-1" /> Simulating…</>
+                    ) : (
+                      <><Zap className="h-3 w-3 mr-1" /> Simulate Webhook</>
+                    )}
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

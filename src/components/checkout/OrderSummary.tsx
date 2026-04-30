@@ -1,13 +1,15 @@
 "use client";
 
-import { useCart } from "@/store/useCart";
+import { useCart } from "@/core/store/useCart";
+import { useCheckoutStore } from "@/core/store/useCheckoutStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
 export function OrderSummary() {
   const { items, getCartTotal } = useCart();
+  const { deliveryInfo } = useCheckoutStore();
   const subtotal = getCartTotal();
-  const deliveryFee: number = 0; // To be calculated based on zone
+  const deliveryFee: number = deliveryInfo?.deliveryFee || 0;
   const total = subtotal + deliveryFee;
 
   return (

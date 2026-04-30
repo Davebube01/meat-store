@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/CHIMDIEBUBE.A_SYDANI/Desktop/meat-store/frontend/src/app/admin/%28dashboard%29/dashboard/page.tsx"],"sourcesContent":["\"use client\";\r\n\r\nexport default function AdminDashboardPage() {\r\n  return (\r\n    <div className=\"p-6\">\r\n      <h1 className=\"text-3xl font-bold font-serif text-gray-900\">\r\n        Dashboard\r\n      </h1>\r\n      <p className=\"text-gray-500\">Minimal version for debugging.</p>\r\n    </div>\r\n  );\r\n}\r\n"],"names":[],"mappings":";;;;;AAAA;;AAEe,SAAS;IACtB,qBACE,6LAAC;QAAI,WAAU;;0BACb,6LAAC;gBAAG,WAAU;0BAA8C;;;;;;0BAG5D,6LAAC;gBAAE,WAAU;0BAAgB;;;;;;;;;;;;AAGnC;KATwB"}}]
+}

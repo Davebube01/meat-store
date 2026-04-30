@@ -1,4 +1,4 @@
-import { Star, Quote } from "lucide-react";
+﻿import { Star, Quote } from "lucide-react";
 
 const testimonials = [
   {
@@ -6,7 +6,7 @@ const testimonials = [
     name: "Sarah Adebayo",
     role: "Home Chef",
     content:
-      "The quality of the goat meat is exceptional. It was perfectly cleaned and cut exactly how I wanted. Delivered right on time for my dinner party!",
+      "Everything Fresh makes shopping so easy. I can choose my portions, and I trust the quality every time!",
     rating: 5,
   },
   {
@@ -22,14 +22,14 @@ const testimonials = [
     name: "Chioma Okeke",
     role: "Loyal Customer",
     content:
-      "Finally, a reliable online meat store in Abuja! The ordering process is so smooth, and the customer service is top-notch. Love the packaging too.",
+      "Finally, a reliable online fresh food store in Abuja! Ordering is seamless, and everything arrives fresh and well-packaged. It saves me so much time",
     rating: 5,
   },
 ];
 
 export function Testimonials() {
   return (
-    <section className="py-16 md:py-24 bg-[#FFF8F1]">
+    <section className="py-16 md:py-24 bg-[#F0FFDF]">
       <div className="container mx-auto px-4">
         <div className="text-center max-w-2xl mx-auto mb-16">
           <h2 className="text-3xl font-bold font-serif tracking-tight text-[#1a1a1a] md:text-4xl mb-4">
@@ -47,13 +47,13 @@ export function Testimonials() {
               key={testimonial.id}
               className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative"
             >
-              <Quote className="absolute top-8 right-8 h-8 w-8 text-orange-100" />
+              <Quote className="absolute top-8 right-8 h-8 w-8 text-green-100" />
 
               <div className="flex gap-1 mb-6">
                 {[...Array(testimonial.rating)].map((_, i) => (
                   <Star
                     key={i}
-                    className="h-5 w-5 fill-current text-orange-400"
+                    className="h-5 w-5 fill-current text-green-400"
                   />
                 ))}
               </div>
@@ -63,7 +63,7 @@ export function Testimonials() {
               </blockquote>
 
               <div className="flex items-center gap-4">
-                <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center font-bold text-orange-600">
+                <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center font-bold text-green-600">
                   {testimonial.name[0]}
                 </div>
                 <div>

@@ -2,128 +2,92 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Package,
-  ShoppingCart,
-  Users,
-  Settings,
-  LogOut,
-  Menu,
+import { 
+  X,
+  Store,
+  LogOut
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
+import { useAuthStore } from "../../core/store/useAuthStore";
+import { useEffect } from "react";
+import { ADMIN_ROUTES } from "@/core/constants/routes";
 
-import { useState } from "react";
-
-const sidebarItems = [
-  {
-    title: "Dashboard",
-    href: "/admin/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "Products",
-    href: "/admin/products",
-    icon: Package,
-  },
-  {
-    title: "Orders",
-    href: "/admin/orders",
-    icon: ShoppingCart,
-  },
-  {
-    title: "Customers",
-    href: "/admin/customers",
-    icon: Users,
-  },
-  {
-    title: "Settings",
-    href: "/admin/settings",
-    icon: Settings,
-  },
-];
-
-interface SidebarContentProps {
-  pathname: string;
-  onNavClick?: () => void;
+interface AdminSidebarProps {
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
 }
 
-function SidebarContent({ pathname, onNavClick }: SidebarContentProps) {
-  return (
-    <div className="flex flex-col h-full bg-white border-r border-gray-100">
-      <div className="h-16 flex items-center px-6 border-b border-gray-100">
-        <Link
-          href="/admin/dashboard"
-          className="flex items-center gap-2 font-serif font-bold text-xl text-[#FF6B35]"
-          onClick={onNavClick}
-        >
-          MeatStore Admin
-        </Link>
-      </div>
-
-      <div className="flex-1 flex flex-col gap-1 p-4">
-        {sidebarItems.map((item) => {
-          const isActive =
-            pathname === item.href || pathname?.startsWith(`${item.href}/`);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onNavClick}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-orange-50 text-[#FF6B35]"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-              )}
-            >
-              <item.icon className="h-4 w-4" />
-              {item.title}
-            </Link>
-          );
-        })}
-      </div>
-
-      <div className="p-4 border-t border-gray-100">
-        <Link
-          href="/admin/auth/login"
-          onClick={onNavClick}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
-        >
-          <LogOut className="h-4 w-4" />
-          Sign Out
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-export function AdminSidebar() {
+export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
   const pathname = usePathname();
+  const signOut = useAuthStore((state) => state.signOut);
+
+  // Close sidebar on navigation (mobile)
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pathname, setIsOpen]);
 
   return (
-    <div className="hidden lg:flex w-64 flex-col fixed inset-y-0 z-50">
-      <SidebarContent pathname={pathname} />
-    </div>
-  );
-}
+    <>
+      {/* Mobile Backdrop */}
+      <div 
+        className={`fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => setIsOpen(false)}
+      />
 
-export function MobileSidebar() {
-  const pathname = usePathname();
-  const [open, setOpen] = useState(false);
+      {/* Sidebar Container */}
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      }`}>
+        {/* Header/Logo */}
+        <div className="p-6 flex items-center justify-between">
+          <div className="flex items-center gap-x-3">
+            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-green-500 to-green-700 flex items-center justify-center shadow-lg shadow-green-500/30">
+              <Store className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="text-xl font-bold tracking-tight text-gray-900">MeatStore</h1>
+          </div>
+          <button 
+            onClick={() => setIsOpen(false)}
+            className="p-2 lg:hidden text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-  return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="lg:hidden">
-          <Menu className="h-6 w-6" />
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" className="p-0 w-64">
-        <SidebarContent pathname={pathname} onNavClick={() => setOpen(false)} />
-      </SheetContent>
-    </Sheet>
+        {/* Navigation Links */}
+        <nav className="flex-1 px-4 py-2 space-y-1">
+          {ADMIN_ROUTES.map((route) => {
+            const isActive = pathname === route.href || pathname.startsWith(`${route.href}/`);
+            
+            return (
+              <Link
+                key={route.href}
+                href={route.href}
+                className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                  isActive 
+                    ? "bg-green-50 text-green-700 shadow-sm shadow-green-100" 
+                    : "text-gray-500 hover:text-green-600 hover:bg-green-50/50"
+                }`}
+              >
+                <route.icon className={`w-5 h-5 mr-3 transition-colors ${isActive ? "text-green-700" : "group-hover:text-green-600"}`} />
+                {route.label}
+              </Link>
+            )
+          })}
+        </nav>
+
+        {/* Footer/Logout */}
+        <div className="p-4 border-t border-gray-100">
+          <button 
+            onClick={() => signOut()}
+            className="flex items-center w-full px-4 py-3 text-sm font-medium text-red-500 rounded-xl hover:bg-red-50 transition-colors group"
+          >
+            <LogOut className="w-5 h-5 mr-3 transition-transform group-hover:-translate-x-1" />
+            Logout
+          </button>
+        </div>
+      </div>
+    </>
   );
 }

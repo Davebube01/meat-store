@@ -1,4 +1,5 @@
-import { getProductBySlug } from "@/lib/api";
+import { getProductBySlug } from "@/core/api";
+import { API_BASE_URL } from "@/core/api/client";
 import { ProductInteraction } from "@/components/ProductInteraction";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -28,6 +29,12 @@ export default async function ProductDetail(props: {
     notFound();
   }
 
+  const getFullImageUrl = (url: string | undefined) => {
+    if (!url) return "/placeholder.jpg";
+    if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:")) return url;
+    return `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-background font-sans">
       <Header />
@@ -37,9 +44,10 @@ export default async function ProductDetail(props: {
             {/* Image Section */}
             <div className="relative aspect-square md:aspect-4/3 rounded-3xl overflow-hidden bg-gray-100">
               <Image
-                src={product.imageUrl}
+                src={getFullImageUrl(product.image_url)}
                 alt={product.name}
                 fill
+                unoptimized
                 className="object-cover"
                 priority
               />
@@ -51,7 +59,7 @@ export default async function ProductDetail(props: {
                 {product.name}
               </h1>
               <div className="flex items-end gap-2">
-                <span className="text-3xl font-bold text-[#FF6B35]">
+                <span className="text-3xl font-bold text-[#22c55e]">
                   ₦{product.price.toLocaleString()}
                 </span>
                 <span className="text-gray-500 mb-1 font-medium text-lg">

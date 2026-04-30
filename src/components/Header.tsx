@@ -3,7 +3,7 @@
 import { ChefHat, ShoppingCart, LogOut, User } from "lucide-react";
 import Link from "next/link";
 import { CartSheet } from "./CartSheet";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useAuthStore } from "@/core/store/useAuthStore";
 import { SignInModal } from "./SignInModal";
 import { Button } from "./ui/button";
 import {
@@ -63,6 +63,13 @@ export function Header() {
                 >
                   Products
                 </Link>
+                <Link
+                  href="/orders"
+                  className="text-lg font-medium hover:text-amber-900 transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Orders
+                </Link>
                 {/* Add more links here as needed */}
               </nav>
             </SheetContent>
@@ -70,24 +77,31 @@ export function Header() {
 
           {/* Logo Section */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-900 text-white">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-700 text-white">
               <ChefHat className="h-6 w-6" />
             </div>
             <div className="flex flex-col leading-none">
-              <span className="text-xl font-bold text-amber-900">GoatMeat</span>
-              <span className="text-xs font-medium text-amber-700">Store</span>
+              <span className="text-xs font-medium text-green-500">Everything</span>
+              <span className="text-xl font-bold text-green-700">Fresh</span>
+              
             </div>
           </Link>
         </div>
 
         {/* Navigation & Cart */}
         <div className="flex items-center gap-4 md:gap-6">
-          <nav className="hidden md:block">
+          <nav className="hidden md:flex gap-6 items-center">
             <Link
               href="/products"
               className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
             >
               Products
+            </Link>
+            <Link
+              href="/orders"
+              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            >
+              Orders
             </Link>
           </nav>
 
@@ -98,10 +112,10 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="relative h-8 w-8 rounded-full bg-amber-100"
+                  className="relative h-8 w-8 rounded-full bg-green-100"
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full  text-amber-900 font-medium">
-                    {user.name.slice(0, 2).toUpperCase()}
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full  text-green-700 font-medium">
+                    {user.full_name?.slice(0, 2).toUpperCase()}
                   </div>
                 </Button>
               </DropdownMenuTrigger>
@@ -109,7 +123,7 @@ export function Header() {
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">
-                      {user.name}
+                      {user.full_name}
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {user.email}
@@ -138,7 +152,7 @@ export function Header() {
             </DropdownMenu>
           ) : (
             <SignInModal>
-              <Button size="sm" className="bg-amber-900 hover:bg-amber-900/90">
+              <Button size="sm" className="bg-green-700 hover:bg-green-700/90">
                 Sign In
               </Button>
             </SignInModal>

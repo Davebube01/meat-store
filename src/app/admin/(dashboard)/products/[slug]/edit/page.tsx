@@ -1,22 +1,40 @@
+"use client";
+
 import { ProductForm } from "@/components/admin/products/ProductForm";
-import { getProductBySlug } from "@/lib/api";
-import { ArrowLeft } from "lucide-react";
+import { getAdminProductBySlug, Product } from "@/core/api";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
-interface EditProductPageProps {
-  params: {
-    slug: string;
-  };
-}
+export default function EditProductPage() {
+  const params = useParams();
+  const slug = params.slug as string;
 
-export default async function EditProductPage({
-  params,
-}: EditProductPageProps) {
-  const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  if (!product) {
+  useEffect(() => {
+    if (!slug) return;
+    getAdminProductBySlug(slug)
+      .then((p) => {
+        if (!p) setError(true);
+        else setProduct(p);
+      })
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-20 text-gray-500">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error || !product) {
     notFound();
   }
 

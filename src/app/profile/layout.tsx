@@ -10,7 +10,7 @@ import {
   Settings,
   LogOut,
 } from "lucide-react";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useAuthStore } from "@/core/store/useAuthStore";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -58,7 +58,7 @@ export default function ProfileLayout({
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#FFF8F1] flex flex-col">
+      <div className="min-h-screen bg-[#F0FFDF] flex flex-col">
         <Header />
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="text-center space-y-4">
@@ -74,7 +74,7 @@ export default function ProfileLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[#FFF8F1] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F0FFDF] flex flex-col font-sans">
       <Header />
 
       <main className="flex-1 py-12">
@@ -83,16 +83,17 @@ export default function ProfileLayout({
             {/* Sidebar */}
             <aside className="w-full md:w-80 space-y-6">
               {/* User Card */}
-              <div className="bg-white rounded-3xl p-6 shadow-sm border border-orange-100/50 flex flex-col items-center text-center">
-                <div className="h-24 w-24 rounded-full bg-amber-100 flex items-center justify-center text-3xl font-bold text-amber-900 mb-4">
-                  {user.name.slice(0, 2).toUpperCase()}
+              <div className="bg-white rounded-3xl p-6 shadow-sm border border-green-100/50 flex flex-col items-center text-center">
+                <div className="h-24 w-24 rounded-full bg-green-100 flex items-center justify-center text-3xl font-bold text-green-700 mb-4">
+                  {(user.full_name || user.email).slice(0, 2).toUpperCase()}
                 </div>
-                <h2 className="text-xl font-bold text-gray-900">{user.name}</h2>
+                <h2 className="text-xl font-bold text-gray-900">{user.full_name || user.email}</h2>
                 <p className="text-sm text-gray-500">{user.email}</p>
+
               </div>
 
               {/* Navigation */}
-              <nav className="bg-white rounded-3xl p-4 shadow-sm border border-orange-100/50 space-y-1">
+              <nav className="bg-white rounded-3xl p-4 shadow-sm border border-green-100/50 space-y-1">
                 {sidebarItems.map((item) => (
                   <Link
                     key={item.label}
@@ -100,7 +101,7 @@ export default function ProfileLayout({
                     className={cn(
                       "flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm",
                       item.active
-                        ? "bg-orange-50 text-[#FF6B35]"
+                        ? "bg-green-50 text-[#22c55e]"
                         : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
                     )}
                   >

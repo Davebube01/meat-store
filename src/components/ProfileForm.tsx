@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useAuthStore } from "@/core/store/useAuthStore";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -10,7 +10,7 @@ import { Textarea } from "./ui/textarea";
 export function ProfileForm() {
   const { user, updateProfile } = useAuthStore();
   const [formData, setFormData] = useState({
-    name: "",
+    full_name: "",
     email: "",
     phone: "",
     address: "",
@@ -21,7 +21,7 @@ export function ProfileForm() {
   useEffect(() => {
     if (user) {
       setFormData({
-        name: user.name || "",
+        full_name: user.full_name || "",
         email: user.email || "",
         phone: user.phone || "",
         address: user.address || "",
@@ -54,18 +54,18 @@ export function ProfileForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-6 max-w-2xl bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-orange-100/50"
+      className="space-y-6 max-w-2xl bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-green-100/50"
     >
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="name">Full Name</Label>
+          <Label htmlFor="full_name">Full Name</Label>
           <Input
-            id="name"
-            name="name"
-            value={formData.name}
+            id="full_name"
+            name="full_name"
+            value={formData.full_name}
             onChange={handleChange}
             placeholder="John Doe"
-            className="rounded-xl border-gray-200 focus:border-[#FF6B35] focus:ring-[#FF6B35]"
+            className="rounded-xl border-gray-200 focus:border-[#22c55e] focus:ring-[#22c55e]"
           />
         </div>
         <div className="space-y-2">
@@ -88,7 +88,7 @@ export function ProfileForm() {
             value={formData.phone}
             onChange={handleChange}
             placeholder="+234..."
-            className="rounded-xl border-gray-200 focus:border-[#FF6B35] focus:ring-[#FF6B35]"
+            className="rounded-xl border-gray-200 focus:border-[#22c55e] focus:ring-[#22c55e]"
           />
         </div>
         <div className="space-y-2 md:col-span-2">
@@ -99,7 +99,7 @@ export function ProfileForm() {
             value={formData.address}
             onChange={handleChange}
             placeholder="123 Street Name, Area, City"
-            className="rounded-xl border-gray-200 focus:border-[#FF6B35] focus:ring-[#FF6B35]"
+            className="rounded-xl border-gray-200 focus:border-[#22c55e] focus:ring-[#22c55e]"
           />
         </div>
         <div className="space-y-2 md:col-span-2">
@@ -110,7 +110,7 @@ export function ProfileForm() {
             value={formData.bio}
             onChange={handleChange}
             placeholder="Any specific instructions for delivery..."
-            className="min-h-[100px] rounded-xl border-gray-200 focus:border-[#FF6B35] focus:ring-[#FF6B35]"
+            className="min-h-[100px] rounded-xl border-gray-200 focus:border-[#22c55e] focus:ring-[#22c55e]"
           />
         </div>
       </div>
@@ -119,7 +119,7 @@ export function ProfileForm() {
         <Button
           type="submit"
           disabled={status === "saving"}
-          className="bg-[#FF6B35] hover:bg-[#E85D2A] text-white rounded-xl px-8 h-12 text-base font-semibold shadow-lg shadow-orange-200/50 transition-all min-w-[140px]"
+          className="bg-[#22c55e] hover:bg-[#16a34a] text-white rounded-xl px-8 h-12 text-base font-semibold shadow-lg shadow-green-200/50 transition-all min-w-[140px]"
         >
           {status === "saving"
             ? "Saving..."

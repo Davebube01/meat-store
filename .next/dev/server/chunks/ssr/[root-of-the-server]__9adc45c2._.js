@@ -320,8 +320,8 @@ function OrderStats({ orders }) {
             value: pending,
             description: "Waiting for confirmation",
             icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$clock$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__$3c$export__default__as__Clock$3e$__["Clock"],
-            color: "text-orange-600",
-            bg: "bg-orange-100"
+            color: "text-green-600",
+            bg: "bg-green-100"
         },
         {
             title: "Processing",

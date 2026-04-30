@@ -1,8 +1,9 @@
 "use client";
 
-import { useCart } from "@/store/useCart";
+import { useCart } from "@/core/store/useCart";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Plus, Minus, Trash2 } from "lucide-react";
+import { API_BASE_URL } from "@/core/api/client";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -39,6 +40,12 @@ export function CartSheet() {
 
   const itemCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
+  const getFullImageUrl = (url: string | undefined) => {
+    if (!url) return "/placeholder.jpg";
+    if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:")) return url;
+    return `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+  };
+
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
@@ -49,7 +56,7 @@ export function CartSheet() {
         >
           <ShoppingCart className="h-6 w-6" />
           {itemCount > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white">
+            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-green-500 text-[10px] font-bold text-white">
               {itemCount}
             </span>
           )}
@@ -65,8 +72,8 @@ export function CartSheet() {
         <div className="flex-1 overflow-y-auto py-6">
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
-              <div className="h-20 w-20 bg-orange-50 rounded-full flex items-center justify-center">
-                <ShoppingCart className="h-10 w-10 text-orange-200" />
+              <div className="h-20 w-20 bg-green-50 rounded-full flex items-center justify-center">
+                <ShoppingCart className="h-10 w-10 text-green-200" />
               </div>
               <div className="space-y-1">
                 <p className="text-xl font-semibold text-gray-900">
@@ -92,9 +99,10 @@ export function CartSheet() {
                 <div key={item.cartId || item.id} className="flex gap-4">
                   <div className="relative h-20 w-20 overflow-hidden rounded-lg border bg-gray-50">
                     <Image
-                      src={item.imageUrl}
+                      src={getFullImageUrl(item.image_url)}
                       alt={item.name}
                       fill
+                      unoptimized
                       className="object-cover"
                     />
                   </div>
@@ -169,7 +177,7 @@ export function CartSheet() {
                 <span>₦{getCartTotal().toLocaleString()}</span>
               </div>
               <Button
-                className="w-full bg-orange-500 hover:bg-orange-600 font-bold"
+                className="w-full bg-green-500 hover:bg-green-600 font-bold"
                 size="lg"
                 asChild
               >

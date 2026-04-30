@@ -90,7 +90,7 @@ export function SettingsForm() {
           </TabsTrigger>
           <TabsTrigger
             value="notifications"
-            className="gap-2 data-[state=active]:bg-orange-100 data-[state=active]:text-orange-700"
+            className="gap-2 data-[state=active]:bg-green-100 data-[state=active]:text-green-700"
           >
             <Bell className="h-4 w-4" />
             Notifications
@@ -186,7 +186,7 @@ export function SettingsForm() {
                   <div className="h-10 w-10 rounded-full bg-purple-600 ring-2 ring-offset-2 ring-purple-600 cursor-pointer"></div>
                   <div className="h-10 w-10 rounded-full bg-blue-600 cursor-pointer hover:ring-2 hover:ring-offset-2 hover:ring-blue-600 transition-all"></div>
                   <div className="h-10 w-10 rounded-full bg-green-600 cursor-pointer hover:ring-2 hover:ring-offset-2 hover:ring-green-600 transition-all"></div>
-                  <div className="h-10 w-10 rounded-full bg-orange-600 cursor-pointer hover:ring-2 hover:ring-offset-2 hover:ring-orange-600 transition-all"></div>
+                  <div className="h-10 w-10 rounded-full bg-green-600 cursor-pointer hover:ring-2 hover:ring-offset-2 hover:ring-green-600 transition-all"></div>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Currently using the default "Solutions" Purple theme.
@@ -209,7 +209,7 @@ export function SettingsForm() {
 
         {/* Notification Settings */}
         <TabsContent value="notifications">
-          <Card className="border-t-4 border-t-orange-500 shadow-sm mt-6">
+          <Card className="border-t-4 border-t-green-500 shadow-sm mt-6">
             <CardHeader>
               <CardTitle>Email Alerts</CardTitle>
               <CardDescription>

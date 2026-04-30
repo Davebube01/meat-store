@@ -65,8 +65,20 @@ self.__SERVER_FILES_MANIFEST={
       "remotePatterns": [
         {
           "protocol": "https",
-          "hostname": "images.unsplash.com",
+          "hostname": "**",
           "pathname": "/**"
+        },
+        {
+          "protocol": "http",
+          "hostname": "127.0.0.1",
+          "port": "8000",
+          "pathname": "/uploads/**"
+        },
+        {
+          "protocol": "http",
+          "hostname": "localhost",
+          "port": "8000",
+          "pathname": "/uploads/**"
         }
       ],
       "qualities": [
@@ -105,7 +117,7 @@ self.__SERVER_FILES_MANIFEST={
         "transform": "lodash/{{member}}"
       }
     },
-    "outputFileTracingRoot": "C:\\Users\\CHIMDIEBUBE.A_SYDANI\\Desktop\\meat-store\\meat-srore",
+    "outputFileTracingRoot": "C:\\Users\\CHIMDIEBUBE.A_SYDANI\\Desktop\\meat-store\\frontend",
     "cacheComponents": false,
     "cacheLife": {
       "default": {
@@ -298,11 +310,11 @@ self.__SERVER_FILES_MANIFEST={
     "bundlePagesRouterDependencies": false,
     "configFileName": "next.config.ts",
     "turbopack": {
-      "root": "C:\\Users\\CHIMDIEBUBE.A_SYDANI\\Desktop\\meat-store\\meat-srore"
+      "root": "C:\\Users\\CHIMDIEBUBE.A_SYDANI\\Desktop\\meat-store\\frontend"
     },
     "distDirRoot": ".next"
   },
-  "appDir": "C:\\Users\\CHIMDIEBUBE.A_SYDANI\\Desktop\\meat-store\\meat-srore",
+  "appDir": "C:\\Users\\CHIMDIEBUBE.A_SYDANI\\Desktop\\meat-store\\frontend",
   "relativeAppDir": "",
   "files": [
     ".next\\routes-manifest.json",

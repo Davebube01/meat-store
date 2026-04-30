@@ -5,8 +5,9 @@ import { Button } from "./ui/button";
 import { ShoppingCart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useCart } from "@/store/useCart";
-import { Product } from "@/data/products";
+import { useCart } from "@/core/store/useCart";
+import { Product } from "@/core/api";
+import { API_BASE_URL } from "@/core/api/client";
 
 export function ProductCard(product: Product) {
   const addItem = useCart((state) => state.addItem);
@@ -16,19 +17,26 @@ export function ProductCard(product: Product) {
     addItem(product);
   };
 
+  const getFullImageUrl = (url: string | undefined) => {
+    if (!url) return "/placeholder.jpg";
+    if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:")) return url;
+    return `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+  };
+
   return (
     <Link href={`/products/${product.slug}`}>
       <Card className="group flex h-full flex-col overflow-hidden bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer border border-gray-100">
         {/* Image Container with Checkered Pattern Border */}
-        <div className="relative aspect-square overflow-hidden bg-gradient-to-b from-gray-50 to-white p-4">
+        <div className="relative aspect-square overflow-hidden bg-linear-to-b from-gray-50 to-white p-4">
           {/* Decorative top border with checkered pattern effect */}
           {/* <div className="absolute top-0 left-0 right-0 h-3 bg-gradient-to-r from-red-500 via-white to-red-500 opacity-20"></div> */}
 
           <div className="relative w-full h-full rounded-2xl overflow-hidden bg-white shadow-inner">
             <Image
-              src={product.imageUrl}
+              src={getFullImageUrl(product.image_url)}
               alt={product.name}
               fill
+              unoptimized
               className="object-cover transition-transform duration-700 group-hover:scale-110"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
             />
@@ -36,9 +44,9 @@ export function ProductCard(product: Product) {
         </div>
 
         {/* Content Section */}
-        <div className="p-4 md:p-6 pt-4 md:pt-5 bg-gradient-to-b from-white to-gray-50">
+        <div className="p-4 md:p-6 pt-4 md:pt-5 bg-linear-to-b from-white to-gray-50">
           <h3
-            className="text-xl font-bold text-amber-900 tracking-tight mb-2"
+            className="text-xl font-bold text-green-700 tracking-tight mb-2"
             style={{ fontFamily: "Georgia, serif" }}
           >
             {product.name}
@@ -60,7 +68,7 @@ export function ProductCard(product: Product) {
 
             <Button
               size="icon"
-              className="h-14 w-14 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95"
+              className="h-14 w-14 rounded-full bg-linear-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95"
               onClick={handleAddToCart}
             >
               <ShoppingCart className="h-6 w-6" />

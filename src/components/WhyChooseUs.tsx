@@ -1,4 +1,4 @@
-import { Truck, ShieldCheck, Clock, Leaf } from "lucide-react";
+﻿import { Truck, ShieldCheck, Clock, Leaf } from "lucide-react";
 
 const features = [
   {
@@ -17,7 +17,7 @@ const features = [
     icon: Clock,
     title: "Fresh Daily",
     description:
-      "Our meat is processed daily to ensure maximum freshness and flavor.",
+      "Everything is handled daily to give you the best quality.",
   },
   {
     icon: Leaf,
@@ -33,11 +33,10 @@ export function WhyChooseUs() {
       <div className="container mx-auto px-4">
         <div className="text-center max-w-2xl mx-auto mb-16">
           <h2 className="text-3xl font-bold font-serif tracking-tight text-[#1a1a1a] md:text-4xl mb-4">
-            Why Choose Our Meat?
+            Why Choose Everything Fresh?
           </h2>
           <p className="text-lg text-gray-600">
-            We take pride in providing the highest quality meat with exceptional
-            service.
+            We are committed to delivering fresh, high-quality food you can trust—every single day.
           </p>
         </div>
 
@@ -45,10 +44,10 @@ export function WhyChooseUs() {
           {features.map((feature, index) => (
             <div
               key={index}
-              className="flex flex-col items-center text-center p-6 rounded-2xl bg-[#FFF8F1] hover:shadow-lg transition-all duration-300 group"
+              className="flex flex-col items-center text-center p-6 rounded-2xl bg-[#F0FFDF] hover:shadow-lg transition-all duration-300 group"
             >
               <div className="h-16 w-16 mb-6 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-300">
-                <feature.icon className="h-8 w-8 text-orange-500" />
+                <feature.icon className="h-8 w-8 text-green-500" />
               </div>
               <h3 className="text-xl font-bold text-[#1a1a1a] mb-3">
                 {feature.title}

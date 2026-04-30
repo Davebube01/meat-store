@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Order, OrderStatus } from "@/data/orders";
-import { Customer } from "@/data/customers";
+import { Order, Customer, OrderStatus } from "@/core/api";
+
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
@@ -40,7 +40,7 @@ export function OrdersTable({ orders, customers }: OrdersTableProps) {
   const filteredOrders = orders.filter((order) => {
     const matchesStatus =
       filterStatus === "all" || order.status === filterStatus;
-    const customerName = getCustomerName(order.customerId).toLowerCase();
+    const customerName = (order.user_id ? getCustomerName(order.user_id) : order.guest_info?.fullName || "Guest").toLowerCase();
     const orderId = order.id.toLowerCase();
     const matchesSearch =
       customerName.includes(search.toLowerCase()) ||
@@ -50,13 +50,12 @@ export function OrdersTable({ orders, customers }: OrdersTableProps) {
 
   const getStatusStyles = (status: OrderStatus) => {
     switch (status) {
-      case "placed":
+      case "pending":
         return "bg-yellow-100 text-yellow-700 hover:bg-yellow-100 border-yellow-200";
-      case "confirmed":
-      case "prepping":
-      case "quality_check":
+      case "paid":
+      case "processing":
         return "bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200";
-      case "out_for_delivery":
+      case "shipped":
         return "bg-purple-100 text-purple-700 hover:bg-purple-100 border-purple-200";
       case "delivered":
         return "bg-green-100 text-green-700 hover:bg-green-100 border-green-200";
@@ -69,16 +68,14 @@ export function OrdersTable({ orders, customers }: OrdersTableProps) {
 
   const getStatusLabel = (status: OrderStatus) => {
     switch (status) {
-      case "placed":
+      case "pending":
         return "Pending";
-      case "confirmed":
-        return "Confirmed";
-      case "prepping":
+      case "paid":
+        return "Paid";
+      case "processing":
         return "Processing";
-      case "quality_check":
-        return "Quality Check";
-      case "out_for_delivery":
-        return "Out for Delivery";
+      case "shipped":
+        return "Shipped";
       case "delivered":
         return "Completed";
       case "cancelled":
@@ -112,11 +109,10 @@ export function OrdersTable({ orders, customers }: OrdersTableProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="placed">Pending</SelectItem>
-              <SelectItem value="confirmed">Confirmed</SelectItem>
-              <SelectItem value="prepping">Processing</SelectItem>
-              <SelectItem value="quality_check">Quality Check</SelectItem>
-              <SelectItem value="out_for_delivery">Out for Delivery</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="paid">Paid</SelectItem>
+              <SelectItem value="processing">Processing</SelectItem>
+              <SelectItem value="shipped">Shipped</SelectItem>
               <SelectItem value="delivered">Completed</SelectItem>
               <SelectItem value="cancelled">Cancelled</SelectItem>
             </SelectContent>
@@ -137,57 +133,66 @@ export function OrdersTable({ orders, customers }: OrdersTableProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredOrders.map((order) => (
-                <TableRow key={order.id} className="hover:bg-muted/20">
-                  <TableCell className="font-semibold text-primary">
-                    #{order.id}
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">
-                      {getCustomerName(order.customerId)}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(order.date).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>{order.items.length} items</TableCell>
-                  <TableCell className="text-right font-bold">
-                    ₦{order.total.toLocaleString()}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Badge
-                      variant="outline"
-                      className={`${getStatusStyles(order.status)} px-3 py-1`}
-                    >
-                      {getStatusLabel(order.status)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Link href={`/admin/orders/${order.id}`}>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="hover:text-primary"
+              {filteredOrders.length > 0 ? (
+                filteredOrders.map((order) => (
+                  <TableRow key={order.id} className="hover:bg-muted/20">
+                    <TableCell className="font-semibold text-primary">
+                      #{order.id}
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium">
+                        {order.user_id ? getCustomerName(order.user_id) : order.guest_info?.fullName || "Guest"}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>{order.items.length} items</TableCell>
+                    <TableCell className="text-right font-bold">
+                      ₦{order.total_amount.toLocaleString()}
+                    </TableCell>
+
+                    <TableCell className="text-center">
+                      <Badge
+                        variant="outline"
+                        className={`${getStatusStyles(order.status)} px-3 py-1`}
                       >
-                        <span className="sr-only">View</span>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="h-4 w-4"
+                        {getStatusLabel(order.status)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Link href={`/admin/orders/${order.id}`}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="hover:text-primary"
                         >
-                          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                          <circle cx="12" cy="12" r="3" />
-                        </svg>
-                      </Button>
-                    </Link>
+                          <span className="sr-only">View</span>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-4 w-4"
+                          >
+                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                        </Button>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center">
+                    No orders found
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </div>

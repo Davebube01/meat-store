@@ -82,12 +82,6 @@
       "namedRegex": "^/_not\\-found(?:/)?$"
     },
     {
-      "page": "/admin/auth/login",
-      "regex": "^/admin/auth/login(?:/)?$",
-      "routeKeys": {},
-      "namedRegex": "^/admin/auth/login(?:/)?$"
-    },
-    {
       "page": "/admin/customers",
       "regex": "^/admin/customers(?:/)?$",
       "routeKeys": {},
@@ -98,6 +92,12 @@
       "regex": "^/admin/dashboard(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/admin/dashboard(?:/)?$"
+    },
+    {
+      "page": "/admin/login",
+      "regex": "^/admin/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/login(?:/)?$"
     },
     {
       "page": "/admin/orders",
@@ -148,10 +148,22 @@
       "namedRegex": "^/checkout/success(?:/)?$"
     },
     {
+      "page": "/login",
+      "regex": "^/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/login(?:/)?$"
+    },
+    {
       "page": "/order-tracking",
       "regex": "^/order\\-tracking(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/order\\-tracking(?:/)?$"
+    },
+    {
+      "page": "/orders",
+      "regex": "^/orders(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/orders(?:/)?$"
     },
     {
       "page": "/products",
@@ -170,12 +182,6 @@
       "regex": "^/profile/addresses(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/profile/addresses(?:/)?$"
-    },
-    {
-      "page": "/profile/orders",
-      "regex": "^/profile/orders(?:/)?$",
-      "routeKeys": {},
-      "namedRegex": "^/profile/orders(?:/)?$"
     },
     {
       "page": "/profile/payment",

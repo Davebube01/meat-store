@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Order, OrderStatus } from "@/data/orders";
+import { Order, OrderStatus } from "@/core/api";
 import { ListOrdered, CheckCircle2, Clock, Truck } from "lucide-react";
 
 interface OrderStatsProps {
@@ -8,9 +8,9 @@ interface OrderStatsProps {
 
 export function OrderStats({ orders }: OrderStatsProps) {
   const total = orders.length;
-  const pending = orders.filter((o) => o.status === "placed").length;
+  const pending = orders.filter((o) => o.status === "pending").length;
   const processing = orders.filter((o) =>
-    ["confirmed", "prepping", "quality_check"].includes(o.status),
+    ["processing", "in_transit"].includes(o.status),
   ).length;
   const completed = orders.filter((o) => o.status === "delivered").length;
 
@@ -28,8 +28,8 @@ export function OrderStats({ orders }: OrderStatsProps) {
       value: pending,
       description: "Waiting for confirmation",
       icon: Clock,
-      color: "text-orange-600",
-      bg: "bg-orange-100",
+      color: "text-green-600",
+      bg: "bg-green-100",
     },
     {
       title: "Processing",

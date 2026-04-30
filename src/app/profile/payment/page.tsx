@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -30,11 +30,11 @@ export default function PaymentMethodsPage() {
           Payment Methods
         </h1>
         <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Link href="/" className="hover:text-[#FF6B35]">
+          <Link href="/" className="hover:text-[#22c55e]">
             Home
           </Link>
           <span>/</span>
-          <Link href="/profile" className="hover:text-[#FF6B35]">
+          <Link href="/profile" className="hover:text-[#22c55e]">
             Profile
           </Link>
           <span>/</span>
@@ -46,7 +46,7 @@ export default function PaymentMethodsPage() {
         {mockCards.map((card) => (
           <div
             key={card.id}
-            className="bg-white rounded-3xl p-6 shadow-sm border border-orange-100/50 flex items-center justify-between group"
+            className="bg-white rounded-3xl p-6 shadow-sm border border-green-100/50 flex items-center justify-between group"
           >
             <div className="flex items-center gap-4">
               <div className="h-12 w-16 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 font-bold text-xs shrink-0">
@@ -55,12 +55,12 @@ export default function PaymentMethodsPage() {
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-gray-900">
-                    •••• •••• •••• {card.last4}
+                    â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢ {card.last4}
                   </span>
                   {card.default && (
                     <Badge
                       variant="secondary"
-                      className="bg-orange-100 text-[#FF6B35] border-orange-200"
+                      className="bg-green-100 text-[#22c55e] border-green-200"
                     >
                       Default
                     </Badge>
@@ -80,7 +80,7 @@ export default function PaymentMethodsPage() {
           </div>
         ))}
 
-        <Button className="h-12 border-dashed border-gray-300 bg-transparent text-gray-500 hover:bg-gray-50 hover:text-[#FF6B35] shadow-none border-2 text-base font-medium rounded-2xl w-full">
+        <Button className="h-12 border-dashed border-gray-300 bg-transparent text-gray-500 hover:bg-gray-50 hover:text-[#22c55e] shadow-none border-2 text-base font-medium rounded-2xl w-full">
           <Plus className="h-5 w-5 mr-2" />
           Add New Card
         </Button>

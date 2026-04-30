@@ -1,7 +1,7 @@
-import { Header } from "@/components/Header";
+﻿import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { ProductCard } from "@/components/ProductCard";
-import { getProducts } from "@/lib/api";
+import { ProductList } from "./ProductList";
+import { getProducts } from "@/core/api";
 
 export const metadata = {
   title: "All Products - Goat Meat Store",
@@ -25,11 +25,7 @@ export default async function ProductsPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {products.map((product) => (
-              <ProductCard key={product.id} {...product} />
-            ))}
-          </div>
+          <ProductList initialProducts={products} />
         </div>
       </main>
       <Footer />

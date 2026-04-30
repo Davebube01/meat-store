@@ -1,17 +1,16 @@
-import { ProductCard } from "./ProductCard";
-import { Product } from "@/data/products";
+﻿import { ProductCard } from "./ProductCard";
+import { Product } from "@/core/api";
 
 export function FeaturedProducts({ products }: { products: Product[] }) {
   return (
-    <section className="bg-[#FFF8F1] py-16 md:py-24">
+    <section className="bg-[#F0FFDF] py-16 md:py-24">
       <div className="container mx-auto px-4">
         <div className="mb-12 text-center">
           <h2 className="text-3xl font-bold font-serif tracking-tight text-[#1a1a1a] md:text-4xl">
             Featured Products
           </h2>
           <p className="mt-4 text-lg text-gray-600">
-            Discover our most popular goat meat selections, carefully prepared
-            and ready for delivery
+            Explore our most popular fresh picks, carefully selected and ready for delivery.
           </p>
         </div>
 

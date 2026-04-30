@@ -1,12 +1,13 @@
 "use client";
 
-import { Product } from "@/data/products";
+import { Product, deleteAdminProduct } from "@/core/api";
+import { API_BASE_URL } from "@/core/api/client";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { deleteProduct } from "@/lib/api";
+
 
 interface ProductDetailsProps {
   product: Product;
@@ -17,10 +18,16 @@ export function ProductDetails({ product }: ProductDetailsProps) {
 
   const handleDelete = async () => {
     if (confirm("Are you sure you want to delete this product?")) {
-      await deleteProduct(product.slug);
+      await deleteAdminProduct(product.id);
       router.push("/admin/products");
       router.refresh();
     }
+  };
+
+  const getFullImageUrl = (url: string | undefined) => {
+    if (!url) return "/placeholder.jpg";
+    if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:")) return url;
+    return `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
   };
 
   return (
@@ -51,25 +58,27 @@ export function ProductDetails({ product }: ProductDetailsProps) {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8 bg-white p-8 rounded-xl border border-gray-100 shadow-sm">
-        <div className="relative aspect-square rounded-lg overflow-hidden border border-gray-100">
+      <div className="grid md:grid-cols-2 gap-8 bg-white p-8 rounded-xl border border-gray-200 shadow-[0_2px_8px_rgb(0,0,0,0.04)]">
+        <div className="relative aspect-square rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
           <Image
-            src={product.imageUrl}
+            src={getFullImageUrl(product.image_url)}
             alt={product.name}
             fill
+            unoptimized
             className="object-cover"
           />
         </div>
 
         <div className="space-y-6">
           <div>
-            <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 capitalize mb-3">
+            <span className="inline-block px-4 py-1.5 rounded-full text-xs font-bold bg-[#f4f7f5] text-[#3f7a55] capitalize mb-4 shadow-sm border border-[#3f7a55]/10">
               {product.category}
             </span>
             <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
-            <p className="text-2xl font-bold text-gray-900 mt-2">
+            <p className="text-2xl font-bold text-[#3f7a55] mt-2">
               ₦{product.price.toLocaleString()}
             </p>
+
           </div>
 
           <div className="prose text-gray-600">
@@ -89,7 +98,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
 
               <dt className="text-gray-500">Weight Options</dt>
               <dd className="text-gray-900">
-                {product.weightOptions.join(", ")}
+                {product.weight_options.join(", ")}
               </dd>
 
               {product.parts && (

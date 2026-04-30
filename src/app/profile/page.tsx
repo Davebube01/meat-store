@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { ProfileForm } from "@/components/ProfileForm";
 import Link from "next/link";
@@ -11,7 +11,7 @@ export default function ProfilePage() {
           My Account
         </h1>
         <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Link href="/" className="hover:text-[#FF6B35]">
+          <Link href="/" className="hover:text-[#22c55e]">
             Home
           </Link>
           <span>/</span>

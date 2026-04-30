@@ -222,7 +222,7 @@ async function CustomerPage({ params }) {
     }
     const customerOrders = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$data$2f$orders$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["orders"].filter((o)=>o.customerId === customer.id);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-        className: "flex-1 space-y-4 p-8 pt-6",
+        className: "flex-1 space-y-4 p-4 md:p-8 pt-6",
         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$admin$2f$customers$2f$CustomerProfile$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["CustomerProfile"], {
             customer: customer,
             orders: customerOrders
