@@ -31,6 +31,9 @@ import Link from "next/link";
 import { getUserOrderById, getUserOrders, getPublicOrderTrack, UserOrder, UserOrderItem } from "@/core/api/user/orders";
 import { API_BASE_URL } from "@/core/api/client";
 import { useAuthStore } from "@/core/store/useAuthStore";
+import { PayNow } from "@/components/orders/PayNow";
+import { PaymentDeadline } from "@/components/orders/PaymentDeadline";
+import { isUnpaid } from "@/lib/orderStatus";
 
 export default function OrderTrackingPage() {
   const [searchId, setSearchId] = useState("");
@@ -405,6 +408,23 @@ export default function OrderTrackingPage() {
                       </span>
                     </div>
                   </div>
+
+                  {/* Unpaid online order: let a guest finish paying instead of being stuck */}
+                  {isUnpaid(order.status) && order.payment_method !== "cod" && (
+                    <div className="mb-8">
+                      {order.payment_expires_at && (
+                        <PaymentDeadline
+                          expiresAt={order.payment_expires_at}
+                          onExpired={() => fetchTracking(order.id, searchEmail || order.guest_info?.email)}
+                        />
+                      )}
+                      <PayNow
+                        order={order}
+                        email={searchEmail || order.guest_info?.email || ""}
+                        className="w-full sm:w-auto bg-green-700 hover:bg-green-800 text-white"
+                      />
+                    </div>
+                  )}
 
                   {/* Order Items */}
                   <div className="space-y-6 mb-12">

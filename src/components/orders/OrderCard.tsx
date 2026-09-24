@@ -6,7 +6,7 @@ import { ChevronRight, Store, Truck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { getThumbnailUrl } from "@/lib/imageUrl";
-import { getStatusInfo, isFinished, shortOrderId } from "@/lib/orderStatus";
+import { getStatusInfo, isFinished, isUnpaid, shortOrderId } from "@/lib/orderStatus";
 import type { UserOrder } from "@/core/api/user/orders";
 
 const MAX_THUMBS = 2;
@@ -18,6 +18,7 @@ export function OrderCard({ order }: { order: UserOrder }) {
   const extra = order.items.length - thumbs.length;
   const summary = order.items.map((item) => `${item.product?.name ?? "Item"} × ${item.quantity}`).join(", ");
   const pickup = order.delivery_method === "pickup";
+  const payable = isUnpaid(order.status) && order.payment_method !== "cod";
 
   return (
     <Link
@@ -71,8 +72,8 @@ export function OrderCard({ order }: { order: UserOrder }) {
 
         <div className="flex shrink-0 items-center justify-between gap-2 border-t border-gray-100 pt-3 sm:flex-col sm:items-end sm:border-0 sm:pt-0">
           <span className="font-bold text-gray-900 text-lg">₦{order.total_amount.toLocaleString()}</span>
-          <span className="inline-flex items-center gap-0.5 text-sm font-medium text-green-700 group-hover:underline">
-            {isFinished(order.status) ? "View details" : "Track order"}
+          <span className={cn("inline-flex items-center gap-0.5 text-sm font-medium group-hover:underline", payable ? "text-orange-700 font-semibold" : "text-green-700")}>
+            {payable ? "Pay now" : isFinished(order.status) ? "View details" : "Track order"}
             <ChevronRight className="h-4 w-4" />
           </span>
         </div>

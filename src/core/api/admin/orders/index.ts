@@ -53,6 +53,7 @@ export interface Order {
   cancelled_by?: "customer" | "admin" | "system" | null;
   cancelled_at?: string | null;
   paid_at?: string | null;
+  payment_expires_at?: string | null;
 }
 
 export interface DispatchPayload {

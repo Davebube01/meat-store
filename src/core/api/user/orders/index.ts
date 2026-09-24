@@ -61,6 +61,8 @@ export interface UserOrder {
   cancellation_reason: string | null;
   cancelled_by: "customer" | "admin" | "system" | null;
   cancelled_at: string | null;
+  // Until when an unpaid online order can still be paid; null otherwise.
+  payment_expires_at: string | null;
 }
 
 export const getUserOrderById = async (orderId: string): Promise<UserOrder> => {

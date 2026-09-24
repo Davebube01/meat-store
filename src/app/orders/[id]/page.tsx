@@ -29,6 +29,8 @@ import { SignInModal } from "@/components/SignInModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CancelOrderDialog } from "@/components/orders/CancelOrderDialog";
+import { PaymentDeadline } from "@/components/orders/PaymentDeadline";
+import { PayNow } from "@/components/orders/PayNow";
 import { cn } from "@/lib/utils";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import {
@@ -73,6 +75,8 @@ function buildTimeline(order: UserOrder) {
 function OrderDetailContent({ id }: { id: string }) {
   const queryClient = useQueryClient();
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const email = useAuthStore((state) => state.user?.email ?? "");
 
   const { data: order, error, isLoading, refetch } = useQuery<UserOrder, any>({
     queryKey: ["order", id],
@@ -124,6 +128,7 @@ function OrderDetailContent({ id }: { id: string }) {
   const cancelled = order.status === "cancelled";
   const canCancel = isUnpaid(order.status);
   const cod = order.payment_method === "cod";
+  const canPay = canCancel && !cod;
   const courier = order.delivery?.courier_name ? order.delivery : null;
   const showPin = !!order.delivery?.delivery_pin && !isFinished(order.status);
 
@@ -157,9 +162,19 @@ function OrderDetailContent({ id }: { id: string }) {
         </div>
 
         {canCancel && (
-          <Button variant="outline" className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => setCancelOpen(true)}>
-            Cancel order
-          </Button>
+          <div className="flex flex-col-reverse sm:flex-row gap-2">
+            <Button variant="outline" className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => setCancelOpen(true)} disabled={paying}>
+              Cancel order
+            </Button>
+            {canPay && (
+              <PayNow
+                order={order}
+                email={email}
+                onBusyChange={setPaying}
+                className="bg-green-700 hover:bg-green-800 text-white min-w-[170px]"
+              />
+            )}
+          </div>
         )}
       </div>
 
@@ -185,11 +200,8 @@ function OrderDetailContent({ id }: { id: string }) {
         </div>
       )}
 
-      {!cancelled && isUnpaid(order.status) && !cod && (
-        <div className="mb-6 rounded-2xl border border-orange-200 bg-orange-50 p-4 flex items-start gap-3 text-sm text-orange-900">
-          <Info className="h-4 w-4 mt-0.5 shrink-0" />
-          This order is waiting for payment. If payment isn't completed in time, it's cancelled automatically so the items go back on sale.
-        </div>
+      {!cancelled && canPay && order.payment_expires_at && (
+        <PaymentDeadline expiresAt={order.payment_expires_at} onExpired={() => refetch()} />
       )}
 
       <div className="grid gap-6 lg:grid-cols-3">
