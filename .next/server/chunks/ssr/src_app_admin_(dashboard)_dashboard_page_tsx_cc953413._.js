@@ -1,3 +1,0 @@
-module.exports=[87721,a=>{"use strict";var b=a.i(87924);function c(){return(0,b.jsxs)("div",{className:"p-6",children:[(0,b.jsx)("h1",{className:"text-3xl font-bold font-serif text-gray-900",children:"Dashboard"}),(0,b.jsx)("p",{className:"text-gray-500",children:"Minimal version for debugging."})]})}a.s(["default",()=>c])}];
-
-//# sourceMappingURL=src_app_admin_%28dashboard%29_dashboard_page_tsx_cc953413._.js.map

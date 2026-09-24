@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/CHIMDIEBUBE.A_SYDANI/Desktop/meat-store/frontend/src/core/api/user/auth/index.ts"],"sourcesContent":["import { fetchClient } from \"../../client\";\r\n\r\nexport const authenticateUser = async (payload: any, isLogin: boolean) => {\r\n  const endpoint = isLogin ? \"/api/v1/auth/login/json\" : \"/api/v1/auth/register\";\r\n  return fetchClient<any>(endpoint, {\r\n    method: \"POST\",\r\n    body: JSON.stringify(payload),\r\n  });\r\n};\r\n\r\nexport const getUserMe = async () => {\r\n  return fetchClient<any>(\"/api/v1/auth/me\");\r\n};\r\n"],"names":[],"mappings":";;;;;;AAAA;;AAEO,MAAM,mBAAmB,OAAO,SAAc;IACnD,MAAM,WAAW,UAAU,4BAA4B;IACvD,OAAO,IAAA,2IAAW,EAAM,UAAU;QAChC,QAAQ;QACR,MAAM,KAAK,SAAS,CAAC;IACvB;AACF;AAEO,MAAM,YAAY;IACvB,OAAO,IAAA,2IAAW,EAAM;AAC1B"}}]
-}
