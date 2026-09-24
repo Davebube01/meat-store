@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { Order, OrderStatus, AdminOrderStatus, Customer } from "@/core/api";
-import { useUpdateOrderStatus, useSimulateWebhook } from "@/core/hooks/usePayment";
+import { useUpdateOrderStatus, useSimulateWebhook, useDispatchOrder, useConfirmDelivery, useCancelAdminOrder } from "@/core/hooks/usePayment";
+import { CancelOrderDialog } from "@/components/orders/CancelOrderDialog";
+import { ADMIN_CANCEL_REASONS, describeCancelledBy } from "@/lib/orderStatus";
 import {
   Card,
   CardContent,
@@ -13,6 +15,8 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import {
   Select,
@@ -37,6 +41,7 @@ import {
   Zap,
   Loader2,
   Store,
+  Bike,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -57,11 +62,46 @@ export function OrderDetails({
 
   const updateMutation = useUpdateOrderStatus(order.id);
   const simulateMutation = useSimulateWebhook(order.id);
+  const dispatchMutation = useDispatchOrder(order.id);
+  const confirmDeliveryMutation = useConfirmDelivery(order.id);
+  const cancelMutation = useCancelAdminOrder(order.id);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [pinInput, setPinInput] = useState("");
+
+  const isDeliveryOrder = (order as any).delivery_method !== "pickup";
+
+  const handleConfirmDelivery = (e: React.FormEvent) => {
+    e.preventDefault();
+    confirmDeliveryMutation.mutate(pinInput, {
+      onSuccess: (updated) => {
+        setOrder(updated as any);
+        setPinInput("");
+      },
+    });
+  };
 
   const handleStatusUpdate = async (newStatus: OrderStatus) => {
     updateMutation.mutate(newStatus, {
       onSuccess: (updated) => setOrder(updated as any),
     });
+  };
+
+  const [courierName, setCourierName] = useState(order.delivery?.courier_name || "");
+  const [courierPhone, setCourierPhone] = useState(order.delivery?.courier_phone || "");
+  const [courierService, setCourierService] = useState(order.delivery?.courier_service || "");
+  const [courierReference, setCourierReference] = useState(order.delivery?.courier_reference || "");
+
+  const handleDispatchSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    dispatchMutation.mutate(
+      {
+        courier_name: courierName,
+        courier_phone: courierPhone,
+        courier_service: courierService,
+        courier_reference: courierReference || undefined,
+      },
+      { onSuccess: (updated) => setOrder(updated as any) },
+    );
   };
 
   const getFullImageUrl = (url: string | undefined) => {
@@ -150,7 +190,9 @@ export function OrderDetails({
               }
               value={order.status}
               onValueChange={(value) =>
-                handleStatusUpdate(value as OrderStatus)
+                // Cancelling needs a reason (shown to the customer), so it
+                // goes through its own dialog instead of a plain status change.
+                value === "cancelled" ? setCancelOpen(true) : handleStatusUpdate(value as OrderStatus)
               }
             >
               <SelectTrigger className="w-[200px] border-0 bg-transparent text-inherit focus:ring-0 font-medium h-10">
@@ -163,13 +205,45 @@ export function OrderDetails({
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="processing">Processing</SelectItem>
                 <SelectItem value="in_transit">{(order as any).delivery_method === 'pickup' ? "Ready for Pickup" : "Out for Delivery"}</SelectItem>
-                <SelectItem value="delivered">{(order as any).delivery_method === 'pickup' ? "Confirm Picked Up" : "Delivered"}</SelectItem>
+                {!isDeliveryOrder && (
+                  <SelectItem value="delivered">Confirm Picked Up</SelectItem>
+                )}
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
       </div>
+
+      {order.status === "cancelled" && (
+        <div role="status" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          <p className="font-semibold">
+            {describeCancelledBy((order as any).cancelled_by)}
+            {(order as any).cancelled_at && (
+              <span className="font-normal text-red-700"> · {new Date((order as any).cancelled_at).toLocaleString()}</span>
+            )}
+          </p>
+          <p className="mt-1">Reason: {(order as any).cancellation_reason || "Reason not recorded"}</p>
+          {(order as any).paid_at && (
+            <p className="mt-2 font-semibold">
+              A payment was received for this order (
+              {new Date((order as any).paid_at).toLocaleString()}). It needs a refund.
+            </p>
+          )}
+        </div>
+      )}
+
+      <CancelOrderDialog
+        open={cancelOpen}
+        onOpenChange={setCancelOpen}
+        reasons={ADMIN_CANCEL_REASONS}
+        title="Cancel this order?"
+        description="The customer will see this reason, and the reserved stock goes back on sale."
+        onConfirm={async (reason) => {
+          const updated = await cancelMutation.mutateAsync(reason);
+          setOrder(updated as any);
+        }}
+      />
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left Column - Order Items & Status Timeline */}
@@ -463,6 +537,119 @@ export function OrderDetails({
               </CardFooter>
             )}
           </Card>
+
+          {(order as any).delivery_method !== "pickup" && (
+            <Card className="border-t-4 border-t-amber-500 shadow-sm">
+              <CardHeader className="border-b bg-muted/30 pb-4">
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <Bike className="w-5 h-5 text-amber-500" />
+                  Courier / Dispatch
+                </CardTitle>
+                <CardDescription>
+                  Who's carrying this order — shown to the customer so they know who to expect and pay.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <form onSubmit={handleDispatchSave} className="space-y-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="courierName">Courier Name</Label>
+                    <Input
+                      id="courierName"
+                      value={courierName}
+                      onChange={(e) => setCourierName(e.target.value)}
+                      placeholder="e.g. Ahmed Bello"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="courierPhone">Courier Phone</Label>
+                    <Input
+                      id="courierPhone"
+                      value={courierPhone}
+                      onChange={(e) => setCourierPhone(e.target.value)}
+                      placeholder="e.g. +234 803 555 1234"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="courierService">Service</Label>
+                    <Input
+                      id="courierService"
+                      value={courierService}
+                      onChange={(e) => setCourierService(e.target.value)}
+                      placeholder="e.g. Bolt, Personal Rider, In-house"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="courierReference">
+                      Trip Reference <span className="text-muted-foreground font-normal">(optional)</span>
+                    </Label>
+                    <Input
+                      id="courierReference"
+                      value={courierReference}
+                      onChange={(e) => setCourierReference(e.target.value)}
+                      placeholder="e.g. Bolt trip ID or receipt number"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={dispatchMutation.isPending}
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-white"
+                  >
+                    {dispatchMutation.isPending ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving…</>
+                    ) : order.delivery?.courier_name ? (
+                      "Update Courier"
+                    ) : (
+                      "Assign Courier"
+                    )}
+                  </Button>
+                </form>
+
+                {order.delivery?.delivery_pin && order.status !== "delivered" && order.status !== "cancelled" && (
+                  <>
+                    <Separator className="my-6" />
+                    <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-4 space-y-4">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Delivery PIN</p>
+                        <p className="text-2xl font-bold tracking-widest text-amber-700">
+                          {order.delivery.delivery_pin}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Given to the customer. Ask the courier for it to confirm delivery.
+                        </p>
+                      </div>
+                      <form onSubmit={handleConfirmDelivery} className="flex items-end gap-2">
+                        <div className="grid gap-2 flex-1">
+                          <Label htmlFor="confirmPin">Enter PIN to confirm delivery</Label>
+                          <Input
+                            id="confirmPin"
+                            value={pinInput}
+                            onChange={(e) => setPinInput(e.target.value)}
+                            placeholder="e.g. 7022"
+                            maxLength={4}
+                            required
+                          />
+                        </div>
+                        <Button
+                          type="submit"
+                          disabled={confirmDeliveryMutation.isPending || pinInput.length !== 4}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          {confirmDeliveryMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            "Confirm"
+                          )}
+                        </Button>
+                      </form>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="border-t-4 border-t-green-500 shadow-sm">
             <CardHeader className="border-b bg-muted/30 pb-4">

@@ -12,6 +12,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useOrderStatus, useSimulateWebhook } from "@/core/hooks/usePayment";
 import { OrderStatus } from "@/core/api/user/orders";
+import { useAuthStore } from "@/core/store/useAuthStore";
 import { useCheckoutStore } from "@/core/store/useCheckoutStore";
 import { cn } from "@/lib/utils";
 import { toast } from "react-toastify";
@@ -145,6 +146,7 @@ export default function PaymentSuccessPage() {
   const [orderId, setOrderId] = useState<string | null>(null);
   const [paymentRef, setPaymentRef] = useState<string | null>(null);
   const { guestInfo } = useCheckoutStore();
+  const isSignedIn = useAuthStore((state) => state.isAuthenticated);
   const isDev = process.env.NODE_ENV === "development";
 
   useEffect(() => {
@@ -282,9 +284,15 @@ export default function PaymentSuccessPage() {
                   <span className="font-mono text-xs font-semibold text-gray-700 truncate max-w-[160px]">{order.id}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-dashed border-gray-100">
-                  <span className="text-sm text-gray-500">Amount</span>
+                  <span className="text-sm text-gray-500">Paid Online</span>
                   <span className="font-bold text-green-700 text-lg">₦{order.total_amount.toLocaleString()}</span>
                 </div>
+                {order.delivery_method !== "pickup" && order.delivery_fee > 0 && (
+                  <div className="flex justify-between items-center py-2 border-b border-dashed border-gray-100">
+                    <span className="text-sm text-gray-500">Delivery Fee <span className="text-xs text-gray-400">(est., pay courier)</span></span>
+                    <span className="text-sm font-medium text-gray-700">~₦{order.delivery_fee.toLocaleString()}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center py-2 border-b border-dashed border-gray-100">
                   <span className="text-sm text-gray-500">Status</span>
                   <span className="capitalize text-sm font-semibold text-gray-700">
@@ -349,7 +357,7 @@ export default function PaymentSuccessPage() {
         {/* ─── Action Buttons ─── */}
         <div className="flex flex-col sm:flex-row gap-3">
           <Button className="flex-1 bg-green-700 hover:bg-green-800 shadow-sm" asChild>
-            <Link href={`/order-tracking?id=${orderId}${guestInfo?.email ? `&email=${encodeURIComponent(guestInfo.email)}` : ''}`}>
+            <Link href={isSignedIn ? `/orders/${orderId}` : `/order-tracking?id=${orderId}${guestInfo?.email ? `&email=${encodeURIComponent(guestInfo.email)}` : ''}`}>
               <ExternalLink className="h-4 w-4 mr-2" />
               Track Order
             </Link>

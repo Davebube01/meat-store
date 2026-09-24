@@ -17,17 +17,9 @@ import { useOrderStore } from "@/core/store/useOrderStore";
 import { cn } from "@/lib/utils";
 import { checkoutOrder } from "@/core/api/user/orders";
 import { initializePayment, simulateWebhook } from "@/core/api/user/payments";
+import { getDeliveryZones, DeliveryZone } from "@/core/api/user/delivery";
 
-const ABUJA_ZONES = [
-  { id: 'airport', name: 'Airport', fee: 15000 },
-  { id: 'apo-cedacrest', name: 'Apo (Legislative Quarters Zone A/ Cedacrest)', fee: 4000 },
-  { id: 'apo-mechanic', name: 'Apo mechanic / Primary school / Nepa', fee: 4500 },
-  { id: 'apo-resettlement', name: 'Apo Resettlement / Shoprite / Extension', fee: 5000 },
-  { id: 'kubwa', name: 'Kubwa', fee: 5500 },
-  { id: 'gwarinpa', name: 'Gwarinpa', fee: 3500 },
-  { id: 'wuse', name: 'Wuse / Wuse 2', fee: 2500 },
-  { id: 'maitama', name: 'Maitama / Asokoro', fee: 3000 },
-];
+const isDev = process.env.NODE_ENV === "development";
 
 const generateDates = () => {
   const dates = [];
@@ -121,7 +113,17 @@ export function CheckoutSteps() {
   const [isZoneDropdownOpen, setIsZoneDropdownOpen] = useState(false);
   const [zoneSearch, setZoneSearch] = useState("");
 
-  const filteredZones = ABUJA_ZONES.filter(z => z.name.toLowerCase().includes(zoneSearch.toLowerCase()));
+  // Estimated fees, fetched from the backend — never hardcoded here, and
+  // never trusted for billing (the server recomputes it from the zone id
+  // at checkout). The customer pays this directly to the courier, in cash.
+  const [zones, setZones] = useState<DeliveryZone[]>([]);
+  useEffect(() => {
+    getDeliveryZones().then(setZones).catch(() => {
+      toast.error("Couldn't load delivery zones. Please refresh and try again.");
+    });
+  }, []);
+
+  const filteredZones = zones.filter(z => z.name.toLowerCase().includes(zoneSearch.toLowerCase()));
   
   const filteredDates = DATES.filter(d => {
     const formatted = formatDate(d);
@@ -134,7 +136,8 @@ export function CheckoutSteps() {
   useEffect(() => {
     if (isAuthenticated && user) {
       if (!email) setEmail(user.email || "");
-      if (!fullName && (user as any).name) setFullName((user as any).name);
+      if (!fullName && user.full_name) setFullName(user.full_name);
+      if (!phone && user.phone) setPhone(user.phone);
     }
   }, [isAuthenticated, user]);
 
@@ -156,11 +159,16 @@ export function CheckoutSteps() {
     if (!paystackConfig || !pendingOrderId) return;
     initializePaystack({
       onSuccess: async () => {
-        // Simulate the Paystack webhook locally so the order flips to PROCESSING
-        try {
-          await simulateWebhook(paystackConfig.reference);
-        } catch (_) {
-          // Non-fatal — don't block the user from seeing the success page
+        // Paystack can't reach localhost, so local dev fakes the webhook here.
+        // In every other environment, the real signed webhook (already
+        // fired by Paystack server-to-server) is what actually confirms the
+        // order — the success page polls for that, it isn't taken on faith.
+        if (isDev) {
+          try {
+            await simulateWebhook(paystackConfig.reference);
+          } catch (_) {
+            // Non-fatal — don't block the user from seeing the success page
+          }
         }
         useCart.getState().clearCart();
         router.push(`/checkout/success?id=${pendingOrderId}&ref=${paystackConfig.reference}`);
@@ -210,15 +218,8 @@ export function CheckoutSteps() {
         ? user.email
         : guestInfo?.email || "";
 
-      const deliveryAddr = deliveryInfo?.address
-        ? `${deliveryInfo.address}, ${deliveryInfo.city}`
-        : "N/A";
-
       const payInit = await initializePayment({
         email: contactEmail,
-        amount: orderResult.total_amount,
-        delivery_fee: orderResult.delivery_fee,
-        delivery_address: deliveryAddr,
         order_id: orderResult.id,
       });
 
@@ -360,34 +361,40 @@ export function CheckoutSteps() {
           <CardContent>
             <form onSubmit={handleDeliverySubmit} className="space-y-6">
               <div className="mb-6">
-                <RadioGroup
-                  value={deliveryMethod}
-                  onValueChange={(v) => setDeliveryMethod(v as 'delivery' | 'pickup')}
-                  className="grid grid-cols-2 gap-4"
-                >
-                  <div
+                {/* Plain buttons, not Radix's RadioGroup: its controlled
+                    value prop and an internal hidden native radio input can
+                    fall out of sync with external (zustand) state updates,
+                    causing it to silently revert a just-made selection. This
+                    is simpler and fully predictable — deliveryMethod is the
+                    only source of truth, read directly on every render. */}
+                <div role="radiogroup" aria-label="Delivery method" className="grid grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={deliveryMethod === "delivery"}
                     className={cn(
-                      "flex items-center space-x-2 border p-4 rounded-md transition-colors cursor-pointer",
+                      "flex items-center space-x-2 border p-4 rounded-md transition-colors cursor-pointer text-left",
                       deliveryMethod === "delivery" && "border-green-700 bg-green-50",
                     )}
                     onClick={() => setDeliveryMethod("delivery")}
                   >
-                    <RadioGroupItem value="delivery" id="delivery" className="sr-only" />
                     <Truck className={cn("h-5 w-5", deliveryMethod === "delivery" ? "text-green-700" : "text-gray-400")} />
-                    <Label htmlFor="delivery" className="cursor-pointer font-medium">Instant Delivery</Label>
-                  </div>
-                  <div
+                    <span className="cursor-pointer font-medium">Instant Delivery</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={deliveryMethod === "pickup"}
                     className={cn(
-                      "flex items-center space-x-2 border p-4 rounded-md transition-colors cursor-pointer",
+                      "flex items-center space-x-2 border p-4 rounded-md transition-colors cursor-pointer text-left",
                       deliveryMethod === "pickup" && "border-green-700 bg-green-50",
                     )}
                     onClick={() => setDeliveryMethod("pickup")}
                   >
-                    <RadioGroupItem value="pickup" id="pickup" className="sr-only" />
                     <Store className={cn("h-5 w-5", deliveryMethod === "pickup" ? "text-green-700" : "text-gray-400")} />
-                    <Label htmlFor="pickup" className="cursor-pointer font-medium">Store Pickup</Label>
-                  </div>
-                </RadioGroup>
+                    <span className="cursor-pointer font-medium">Store Pickup</span>
+                  </button>
+                </div>
               </div>
 
               {deliveryMethod === 'delivery' ? (
@@ -592,7 +599,7 @@ export function CheckoutSteps() {
                         onClick={() => setIsZoneDropdownOpen(!isZoneDropdownOpen)}
                       >
                         <span className={deliveryZone ? "text-gray-900 font-medium" : "text-gray-500"}>
-                           {deliveryZone ? ABUJA_ZONES.find(z => z.id === deliveryZone)?.name : "Search and select delivery zone..."}
+                           {deliveryZone ? zones.find(z => z.id === deliveryZone)?.name : "Search and select delivery zone..."}
                         </span>
                         <ChevronDown className="h-4 w-4 opacity-50" />
                       </div>
@@ -619,7 +626,7 @@ export function CheckoutSteps() {
                                     className="relative flex w-full cursor-pointer select-none items-center rounded-md py-3 px-3 text-sm outline-none hover:bg-gray-50 focus:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
                                     onClick={() => {
                                        setDeliveryZone(zone.id);
-                                       setDeliveryFee(zone.fee);
+                                       setDeliveryFee(zone.estimated_fee);
                                        setIsZoneDropdownOpen(false);
                                        setZoneSearch("");
                                     }}
@@ -627,7 +634,7 @@ export function CheckoutSteps() {
                                     <MapPin className="mr-3 h-4 w-4 text-blue-500 shrink-0" />
                                     <span className="flex-1 font-medium text-gray-700">{zone.name}</span>
                                     <span className="ml-auto text-blue-600 font-medium px-2.5 py-1 bg-blue-50/50 rounded-full border border-blue-100 text-xs shadow-sm">
-                                        ₦{zone.fee.toLocaleString() + ".00"}
+                                        Est. ₦{zone.estimated_fee.toLocaleString() + ".00"}
                                     </span>
                                   </div>
                                 ))

@@ -3,7 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify"
 import { initializePayment, simulateWebhook, InitializePaymentPayload } from "@/core/api/user/payments";
-import { getUserOrderById, updateOrderStatus, OrderStatus } from "@/core/api/user/orders";
+import { getUserOrderById, OrderStatus } from "@/core/api/user/orders";
+import { dispatchOrder, DispatchPayload, confirmDelivery, updateAdminOrderStatus, cancelAdminOrder } from "@/core/api/admin/orders";
 
 // ─── Initialize Payment ────────────────────────────────────────────────────
 export const useInitializePayment = () => {
@@ -46,12 +47,29 @@ export const useSimulateWebhook = (orderId: string | null) => {
   });
 };
 
+// ─── Dispatch: Assign Courier (Admin Only) ─────────────────────────────────
+export const useDispatchOrder = (orderId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: DispatchPayload) => dispatchOrder(orderId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["order", orderId] });
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      toast.success("Courier assigned.");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to assign courier.");
+    },
+  });
+};
+
 // ─── Update Order Status (Admin Only) ─────────────────────────────────────
 export const useUpdateOrderStatus = (orderId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (status: string) => updateOrderStatus(orderId, status),
+    mutationFn: (status: string) => updateAdminOrderStatus(orderId, status),
     onMutate: async (newStatus) => {
       // Optimistic update
       await queryClient.cancelQueries({ queryKey: ["order", orderId] });
@@ -61,14 +79,48 @@ export const useUpdateOrderStatus = (orderId: string) => {
       );
       return { previous };
     },
-    onError: (_err, _newStatus, context) => {
+    onError: (error: Error, _newStatus, context) => {
       queryClient.setQueryData(["order", orderId], context?.previous);
-      toast.error("Failed to update order status.");
+      toast.error(error.message || "Failed to update order status.");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["order", orderId] });
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
       toast.success("Order status updated.");
+    },
+  });
+};
+
+// ─── Cancel Order with a reason (Admin Only) ───────────────────────────────
+export const useCancelAdminOrder = (orderId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (reason: string) => cancelAdminOrder(orderId, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["order", orderId] });
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      toast.success("Order cancelled.");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to cancel order.");
+    },
+  });
+};
+
+// ─── Confirm Delivery with PIN (Admin Only) ────────────────────────────────
+export const useConfirmDelivery = (orderId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (pin: string) => confirmDelivery(orderId, pin),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["order", orderId] });
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      toast.success("Delivery confirmed.");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to confirm delivery.");
     },
   });
 };

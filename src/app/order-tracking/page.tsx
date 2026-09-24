@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Search,
   CheckCircle2,
@@ -12,6 +13,10 @@ import {
   ShoppingBag,
   ChevronRight,
   Store,
+  Phone,
+  Bike,
+  KeyRound,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,12 +40,28 @@ export default function OrderTrackingPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorText, setErrorText] = useState("");
 
+  const router = useRouter();
   const { isAuthenticated } = useAuthStore();
+  const [redirecting, setRedirecting] = useState(false);
   const [userOrders, setUserOrders] = useState<UserOrder[]>([]);
   const [recentGuestTrackings, setRecentGuestTrackings] = useState<{id: string, email?: string}[]>([]);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
 
+  // Signed-in customers never need to look an order up by ID + email: they
+  // go straight to their own order (or their order list). This page is for guests.
+  // Reads the live store, since the render-time value can still be the
+  // signed-out default on a hard load.
   useEffect(() => {
+    if (useAuthStore.getState().isAuthenticated) {
+      const id = new URLSearchParams(window.location.search).get("id");
+      setRedirecting(true);
+      router.replace(id ? `/orders/${encodeURIComponent(id)}` : "/orders");
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (useAuthStore.getState().isAuthenticated) return;
+
     const urlParams = new URLSearchParams(window.location.search);
     const idParam = urlParams.get("id");
     const emailParam = urlParams.get("email");
@@ -155,8 +176,8 @@ export default function OrderTrackingPage() {
         },
         {
           title: "Cancelled",
-          date: "",
-          description: "Order has been cancelled.",
+          date: order?.cancelled_at ? new Date(order.cancelled_at).toLocaleDateString() : "",
+          description: `Reason: ${order?.cancellation_reason || "Reason not recorded"}`,
           status: "cancelled",
           icon: Circle,
         }
@@ -222,6 +243,17 @@ export default function OrderTrackingPage() {
       };
     });
   };
+
+  if (redirecting) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-50/50">
+        <Header />
+        <div className="flex-1 flex items-center justify-center text-gray-400">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50/50">
@@ -488,6 +520,57 @@ export default function OrderTrackingPage() {
                       })}
                     </div>
                   </div>
+
+                  {/* Courier / Dispatch Info — shown once the admin has assigned one */}
+                  {order.delivery?.courier_name && (
+                    <div className="mt-8 pt-8 border-t">
+                      <h3 className="font-semibold text-lg mb-4">Delivery contact</h3>
+                      <div className="bg-blue-50 border border-blue-100 rounded-xl p-5 flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0 text-blue-600">
+                          <Bike className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-bold text-gray-900">
+                            {order.delivery.courier_name}
+                            {order.delivery.courier_service && (
+                              <span className="ml-2 text-xs font-medium text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full uppercase tracking-wide">
+                                {order.delivery.courier_service}
+                              </span>
+                            )}
+                          </p>
+                          {order.delivery.courier_phone && (
+                            <a
+                              href={`tel:${order.delivery.courier_phone}`}
+                              className="mt-1 inline-flex items-center gap-1.5 text-sm text-blue-700 font-medium hover:underline"
+                            >
+                              <Phone className="w-3.5 h-3.5" />
+                              {order.delivery.courier_phone}
+                            </a>
+                          )}
+                          <p className="text-xs text-gray-500 mt-2">
+                            This is who has your order — pay the delivery fee to them directly, in cash, on arrival.
+                          </p>
+                        </div>
+                      </div>
+
+                      {order.delivery.delivery_pin && order.status !== "delivered" && order.status !== "cancelled" && (
+                        <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-5 flex items-start gap-4">
+                          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0 text-amber-600">
+                            <KeyRound className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600 mb-1">Your delivery PIN</p>
+                            <p className="text-2xl font-bold tracking-widest text-amber-700">
+                              {order.delivery.delivery_pin}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Give this code to the courier when your order arrives — it's how we confirm you received it.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </Card>
 
@@ -498,7 +581,7 @@ export default function OrderTrackingPage() {
                     <p className="text-sm text-gray-600">Create a free account to automatically track order history and checkout faster.</p>
                   </div>
                   <Button asChild className="bg-green-700 hover:bg-green-800 whitespace-nowrap">
-                    <Link href={`/login?email=${encodeURIComponent(searchEmail)}`}>Create free account</Link>
+                    <Link href={`/register?email=${encodeURIComponent(searchEmail)}`}>Create free account</Link>
                   </Button>
                 </div>
               )}

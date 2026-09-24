@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/core/store/useAuthStore";
+import { useAdminAuthStore } from "@/core/store/useAdminAuthStore";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import { API_BASE_URL } from "@/core/api/client";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const setAuth = useAdminAuthStore((state) => state.setAuth);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -31,7 +31,7 @@ export default function AdminLoginPage() {
 
       const data = await authenticateAdmin(formData);
 
-      // Store the token FIRST so getAuthHeader() works for the next call
+      // Token first, so the /me call below is authenticated.
       setAuth(data.access_token, null);
 
       // Now fetch user details (token is available in the store)

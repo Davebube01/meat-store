@@ -16,7 +16,15 @@ export const handleApiResponseError = async (response: Response) => {
     errorData = { detail: response.statusText || 'Unknown error' };
   }
 
-  const detail = errorData.detail || errorData.message || 'An unexpected error occurred';
+  let detail = errorData.detail || errorData.message || 'An unexpected error occurred';
+
+  // FastAPI validation errors arrive as [{ loc, msg }, ...] — flatten them
+  // into a sentence instead of letting callers print "[object Object]".
+  if (Array.isArray(detail)) {
+    detail = detail
+      .map((d: any) => String(d?.msg ?? d).replace(/^Value error,\s*/i, ''))
+      .join('. ');
+  }
 
   switch (status) {
     case 401:

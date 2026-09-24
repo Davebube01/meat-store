@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
-import { useAuthStore } from "../../../core/store/useAuthStore";
+import { useAdminAuthStore } from "@/core/store/useAdminAuthStore";
+import { restoreSession } from "@/core/api/client";
 
 import { ToastContainer } from "react-toastify";
 import { Loader2 } from "lucide-react";
@@ -16,24 +17,35 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { isAuthenticated, isAdmin } = useAuthStore();
+  const isAuthenticated = useAdminAuthStore((state) => state.isAuthenticated);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
+  // The API is what actually enforces admin access; this just keeps the
+  // portal from rendering for someone who isn't signed in. After a page load
+  // the in-memory token is gone, so it's restored from the admin refresh
+  // cookie first — if that fails, the session is over.
   useEffect(() => {
-    // Small timeout to allow hydration of the auth store
-    const check = () => {
-      if (!isAuthenticated || !isAdmin) {
-        router.push("/admin/login");
-      } else {
-        setCheckingAuth(false);
+    let cancelled = false;
+
+    (async () => {
+      // Read the live store, not the `isAuthenticated` captured at render time:
+      // on a hard load React's first pass sees the store's initial (signed-out)
+      // snapshot even though the persisted state has already been applied.
+      if (!useAdminAuthStore.getState().isAuthenticated) {
+        router.replace("/admin/login");
+        return;
       }
+      const token = await restoreSession("admin");
+      if (cancelled) return;
+      if (token) setCheckingAuth(false);
+      else router.replace("/admin/login");
+    })();
+
+    return () => {
+      cancelled = true;
     };
-    
-    // Check immediately, but also wait a bit for persist hydration
-    const timeout = setTimeout(check, 100);
-    return () => clearTimeout(timeout);
-  }, [isAuthenticated, isAdmin, router]);
+  }, [isAuthenticated, router]);
 
   if (checkingAuth) {
     return (

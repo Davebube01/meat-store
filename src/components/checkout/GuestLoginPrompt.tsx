@@ -44,9 +44,11 @@ export function GuestLoginPrompt({
           </SignInModal>
           <div className="text-center text-sm text-gray-500">
             Earn points and track your history.{" "}
-            <a href="/login?redirect=/checkout" className="text-green-700 font-bold hover:underline">
-              Sign up
-            </a>
+            <SignInModal defaultTab="register">
+              <button type="button" className="text-green-700 font-bold hover:underline">
+                Sign up
+              </button>
+            </SignInModal>
           </div>
           <div className="relative my-2">
             <div className="absolute inset-0 flex items-center">

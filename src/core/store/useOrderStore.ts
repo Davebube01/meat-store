@@ -44,3 +44,9 @@ export const useOrderStore = create<OrderStore>()(
     },
   ),
 );
+
+// See useCart.ts for why this is needed: this store's automatic
+// hydrate-on-creation doesn't reliably fire in this app's setup.
+if (typeof window !== "undefined") {
+  useOrderStore.persist.rehydrate();
+}

@@ -85,3 +85,13 @@ export const useCheckoutStore = create<CheckoutStore>()(
     },
   ),
 );
+
+// See useCart.ts for why this is needed: this store's automatic
+// hydrate-on-creation doesn't reliably fire in this app's setup, and a late,
+// unpredictable rehydration can silently overwrite state a user just set
+// (e.g. clicking "Instant Delivery" appearing to do nothing, because a
+// delayed rehydrate reasserts the stale "pickup" that was last persisted).
+// Triggering it once, early, here avoids that race entirely.
+if (typeof window !== "undefined") {
+  useCheckoutStore.persist.rehydrate();
+}

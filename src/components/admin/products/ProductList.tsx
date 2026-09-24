@@ -1,11 +1,15 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { Product, deleteAdminProduct } from "@/core/api";
 import { API_BASE_URL } from "@/core/api/client";
 import { Edit, Trash2, Search, ChevronDown, Eye } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
+const LOW_STOCK_THRESHOLD = 5;
+
+type StatusFilter = "all" | "active" | "low_stock" | "draft";
 
 interface ProductListProps {
   products: Product[];
@@ -13,6 +17,23 @@ interface ProductListProps {
 }
 
 export function ProductList({ products, onRefresh }: ProductListProps) {
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+
+  // Search and Category above are still decorative — not part of this pass,
+  // which is scoped to the stock column and the Low Stock filter.
+  const filteredProducts = useMemo(() => {
+    switch (statusFilter) {
+      case "active":
+        return products.filter((p) => p.is_active);
+      case "draft":
+        return products.filter((p) => !p.is_active);
+      case "low_stock":
+        return products.filter((p) => p.stock_quantity <= LOW_STOCK_THRESHOLD);
+      default:
+        return products;
+    }
+  }, [products, statusFilter]);
+
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this product?")) {
       await deleteAdminProduct(id);
@@ -54,11 +75,15 @@ export function ProductList({ products, onRefresh }: ProductListProps) {
           </div>
           
           <div className="relative w-full md:w-40">
-            <select className="w-full appearance-none pl-4 pr-10 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3f7a55]/20 focus:border-[#3f7a55] transition-all text-sm bg-white text-gray-700 cursor-pointer">
-              <option>All Status</option>
-              <option>Active</option>
-              <option>Low Stock</option>
-              <option>Draft</option>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+              className="w-full appearance-none pl-4 pr-10 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3f7a55]/20 focus:border-[#3f7a55] transition-all text-sm bg-white text-gray-700 cursor-pointer"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="low_stock">Low Stock</option>
+              <option value="draft">Draft</option>
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
           </div>
@@ -84,7 +109,7 @@ export function ProductList({ products, onRefresh }: ProductListProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {products.map((product) => (
+              {filteredProducts.map((product) => (
                 <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-6 py-4 align-middle">
                     <div className="flex items-center gap-4">
@@ -114,8 +139,15 @@ export function ProductList({ products, onRefresh }: ProductListProps) {
                     ₦{product.price.toLocaleString()}
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {Math.floor(Math.random() * 50) + 1} {/* Mock stock for UI display */}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <span className={product.stock_quantity <= LOW_STOCK_THRESHOLD ? "font-semibold text-red-600" : "text-gray-600"}>
+                      {product.stock_quantity}
+                    </span>
+                    {product.stock_quantity <= LOW_STOCK_THRESHOLD && (
+                      <span className="ml-1.5 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-600 bg-red-50">
+                        Low
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold ${product.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
@@ -149,10 +181,12 @@ export function ProductList({ products, onRefresh }: ProductListProps) {
                   </td>
                 </tr>
               ))}
-              {products.length === 0 && (
+              {filteredProducts.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                    No products found. Add your first product to get started!
+                    {products.length === 0
+                      ? "No products found. Add your first product to get started!"
+                      : "No products match this filter."}
                   </td>
                 </tr>
               )}

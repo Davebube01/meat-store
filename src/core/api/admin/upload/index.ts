@@ -1,12 +1,12 @@
-import { API_BASE_URL, getAuthHeader } from "../../client";
+import { API_BASE_URL, authFetch } from "../../client";
 
 export const uploadAdminImage = async (file: File): Promise<string> => {
   const formData = new FormData();
   formData.append('file', file);
   
-  const res = await fetch(`${API_BASE_URL}/admin/upload`, {
+  // No Content-Type header: the browser sets the multipart boundary itself.
+  const res = await authFetch('/admin/upload', {
     method: 'POST',
-    headers: { ...getAuthHeader() },
     body: formData,
   });
   
@@ -15,5 +15,10 @@ export const uploadAdminImage = async (file: File): Promise<string> => {
     await handleApiResponseError(res);
   }
   const data = await res.json();
+  // Cloudinary returns a full absolute URL — only relative paths (the old
+  // local-disk upload's /uploads/... shape) need the backend origin prefixed.
+  if (data.imageUrl.startsWith("http")) {
+    return data.imageUrl;
+  }
   return `${API_BASE_URL}${data.imageUrl}`;
 };

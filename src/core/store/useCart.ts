@@ -70,3 +70,13 @@ export const useCart = create<CartStore>()(
     },
   ),
 );
+
+// This store's automatic hydrate-on-creation doesn't reliably fire in this
+// app's setup (Next.js + code-split client boundaries) — every consumer was
+// seeing an empty cart on first read until something happened to trigger a
+// rehydrate. Kick it off once, here, as early as the module loads in the
+// browser, so every page (checkout, cart, the header badge) gets real data
+// instead of a transient empty cart.
+if (typeof window !== "undefined") {
+  useCart.persist.rehydrate();
+}

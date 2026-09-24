@@ -2,10 +2,9 @@ import { fetchClient } from "../../client";
 
 export interface InitializePaymentPayload {
   email: string;
-  amount: number;       // total in NGN e.g. 15000.00
-  delivery_fee: number;
-  delivery_address: string;
   order_id: string;
+  // No amount field on purpose: the backend always charges the order's own
+  // server-computed total_amount — never a client-supplied figure.
 }
 
 export interface InitializePaymentResponse {

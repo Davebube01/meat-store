@@ -17,6 +17,7 @@ export function ProductInteraction({ product }: ProductInteractionProps) {
   );
   const { addItem, items } = useCart();
   const [isAdded, setIsAdded] = useState(false);
+  const outOfStock = product.stock_quantity <= 0;
 
   const cartId = selectedOption
     ? `${product.id}-${selectedOption}`
@@ -26,6 +27,7 @@ export function ProductInteraction({ product }: ProductInteractionProps) {
   const currentQuantity = currentItem?.quantity || 0;
 
   const handleAddToCart = () => {
+    if (outOfStock) return;
     addItem(product, selectedOption);
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 2000);
@@ -62,11 +64,12 @@ export function ProductInteraction({ product }: ProductInteractionProps) {
       <div className="pt-4 flex items-center gap-4">
         <Button
           size="lg"
-          className="w-full md:w-auto h-14 px-8 text-base font-semibold bg-[#22c55e] hover:bg-[#16a34a] text-white shadow-lg shadow-green-200/50 rounded-xl gap-2 transition-all"
+          disabled={outOfStock}
+          className="w-full md:w-auto h-14 px-8 text-base font-semibold bg-[#22c55e] hover:bg-[#16a34a] text-white shadow-lg shadow-green-200/50 rounded-xl gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#22c55e]"
           onClick={handleAddToCart}
         >
-          {isAdded ? "Added to Cart!" : "Add to Cart"}{" "}
-          <ShoppingCart className="h-5 w-5" />
+          {outOfStock ? "Out of Stock" : isAdded ? "Added to Cart!" : "Add to Cart"}{" "}
+          {!outOfStock && <ShoppingCart className="h-5 w-5" />}
         </Button>
 
         {currentQuantity > 0 && (

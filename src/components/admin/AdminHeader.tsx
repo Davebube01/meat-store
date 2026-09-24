@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuthStore } from "../../core/store/useAuthStore";
+import { useAdminAuthStore } from "../../core/store/useAdminAuthStore";
 import { Menu, User, Bell, Search } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -9,7 +9,7 @@ interface AdminHeaderProps {
 }
 
 export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
-  const { user } = useAuthStore();
+  const { user } = useAdminAuthStore();
   const pathname = usePathname();
   
   // Simple breadcrumb logic

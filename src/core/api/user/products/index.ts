@@ -10,6 +10,7 @@ export interface Product {
   category: string;
   weight_options: string[];
   parts?: string[];
+  stock_quantity: number;
   is_active: boolean;
 }
 

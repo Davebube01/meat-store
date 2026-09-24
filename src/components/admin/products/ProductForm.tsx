@@ -25,6 +25,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [priceInput, setPriceInput] = useState<string>(initialData?.price?.toString() ?? "");
+  const [stockInput, setStockInput] = useState<string>(initialData?.stock_quantity?.toString() ?? "0");
   const [imageMode, setImageMode] = useState<ImageInputMode>(initialData?.image_url?.startsWith("http") ? "url" : "upload");
   const [previewUrl, setPreviewUrl] = useState<string>("");
 
@@ -53,6 +54,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
       image_url: "",
       category: "goat-meat", // Use a default from seeded categories
       weight_options: [],
+      stock_quantity: 0,
       is_active: true,
     }
   );
@@ -80,6 +82,13 @@ export function ProductForm({ initialData }: ProductFormProps) {
     setPriceInput(raw);
     const parsed = parseFloat(raw);
     setFormData((prev) => ({ ...prev, price: isNaN(parsed) ? 0 : parsed }));
+  };
+
+  const handleStockChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    setStockInput(raw);
+    const parsed = parseInt(raw, 10);
+    setFormData((prev) => ({ ...prev, stock_quantity: isNaN(parsed) ? 0 : parsed }));
   };
 
   const handleCategoryChange = (value: string) => {
@@ -221,6 +230,37 @@ export function ProductForm({ initialData }: ProductFormProps) {
               <option key={cat.id} value={cat.slug}>{cat.name}</option>
             ))}
           </select>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="stock_quantity" className="text-sm font-medium text-gray-700">
+            {initialData ? "Stock Quantity" : "Initial Stock"}
+          </Label>
+          {initialData ? (
+            <>
+              <Input
+                id="stock_quantity"
+                value={initialData.stock_quantity}
+                disabled
+                className="border-gray-200 bg-gray-50 text-gray-500"
+              />
+              <p className="text-xs text-gray-400">
+                Use the Stock panel on the product page to add, remove, or correct stock — every change there is logged.
+              </p>
+            </>
+          ) : (
+            <Input
+              id="stock_quantity"
+              name="stock_quantity"
+              type="number"
+              value={stockInput}
+              onChange={handleStockChange}
+              required
+              placeholder="0"
+              min="0"
+              step="1"
+              className="border-gray-200 focus-visible:ring-[#3f7a55]/30 focus-visible:border-[#3f7a55]"
+            />
+          )}
         </div>
       </div>
 

@@ -48,9 +48,16 @@ export default async function ProductDetail(props: {
                 alt={product.name}
                 fill
                 unoptimized
-                className="object-cover"
+                className={`object-cover ${product.stock_quantity <= 0 ? "grayscale opacity-60" : ""}`}
                 priority
               />
+              {product.stock_quantity <= 0 && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="rounded-full bg-gray-900/80 px-5 py-2 text-sm font-bold uppercase tracking-wider text-white">
+                    Out of Stock
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Content Section */}
@@ -63,7 +70,7 @@ export default async function ProductDetail(props: {
                   ₦{product.price.toLocaleString()}
                 </span>
                 <span className="text-gray-500 mb-1 font-medium text-lg">
-                  / {product.category === "kg" ? "kg" : "unit"}
+                  / {product.category === "per-kg" ? "kg" : "unit"}
                 </span>
               </div>
 

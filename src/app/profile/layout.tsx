@@ -11,6 +11,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuthStore } from "@/core/store/useAuthStore";
+import { logout } from "@/core/auth/logout";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -20,7 +21,7 @@ export default function ProfileLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, signOut } = useAuthStore();
+  const { user } = useAuthStore();
   const pathname = usePathname();
 
   const sidebarItems = [
@@ -112,7 +113,7 @@ export default function ProfileLayout({
 
                 <div className="pt-2 mt-2 border-t border-gray-100">
                   <button
-                    onClick={() => signOut()}
+                    onClick={() => logout()}
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm text-red-600 hover:bg-red-50"
                   >
                     <LogOut className="h-5 w-5" />

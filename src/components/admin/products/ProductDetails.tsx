@@ -7,14 +7,17 @@ import { Edit, Trash2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { StockPanel } from "./StockPanel";
 
 
 interface ProductDetailsProps {
   product: Product;
 }
 
-export function ProductDetails({ product }: ProductDetailsProps) {
+export function ProductDetails({ product: initialProduct }: ProductDetailsProps) {
   const router = useRouter();
+  const [product, setProduct] = useState(initialProduct);
 
   const handleDelete = async () => {
     if (confirm("Are you sure you want to delete this product?")) {
@@ -111,6 +114,8 @@ export function ProductDetails({ product }: ProductDetailsProps) {
           </div>
         </div>
       </div>
+
+      <StockPanel product={product} onProductChange={setProduct} />
     </div>
   );
 }

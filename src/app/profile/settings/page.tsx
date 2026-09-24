@@ -3,12 +3,11 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { useAuthStore } from "@/core/store/useAuthStore";
+import { logout } from "@/core/auth/logout";
 import { LogOut } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 export default function SettingsPage() {
-  const { signOut } = useAuthStore();
 
   return (
     <>
@@ -75,7 +74,7 @@ export default function SettingsPage() {
               <Button
                 variant="destructive"
                 className="w-full sm:w-auto gap-2"
-                onClick={() => signOut()}
+                onClick={() => logout()}
               >
                 <LogOut className="h-4 w-4" />
                 Log Out

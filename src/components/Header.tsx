@@ -4,6 +4,8 @@ import { ChefHat, ShoppingCart, LogOut, User } from "lucide-react";
 import Link from "next/link";
 import { CartSheet } from "./CartSheet";
 import { useAuthStore } from "@/core/store/useAuthStore";
+import { logout } from "@/core/auth/logout";
+import { EmailVerificationBanner } from "@/components/auth/EmailVerificationBanner";
 import { SignInModal } from "./SignInModal";
 import { Button } from "./ui/button";
 import {
@@ -27,11 +29,12 @@ import { Menu } from "lucide-react";
 import { useState } from "react";
 
 export function Header() {
-  const { isAuthenticated, user, signOut } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-backdrop-filter:bg-white/60">
+      <EmailVerificationBanner />
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-4">
           {/* Mobile Menu */}
@@ -142,7 +145,7 @@ export function Header() {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={() => signOut()}
+                  onClick={() => logout()}
                   className="cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50"
                 >
                   <LogOut className="mr-2 h-4 w-4" />

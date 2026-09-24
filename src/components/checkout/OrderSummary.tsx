@@ -7,10 +7,10 @@ import { Separator } from "@/components/ui/separator";
 
 export function OrderSummary() {
   const { items, getCartTotal } = useCart();
-  const { deliveryInfo } = useCheckoutStore();
+  const { deliveryInfo, deliveryMethod } = useCheckoutStore();
   const subtotal = getCartTotal();
-  const deliveryFee: number = deliveryInfo?.deliveryFee || 0;
-  const total = subtotal + deliveryFee;
+  const isPickup = deliveryMethod === "pickup";
+  const estimatedDeliveryFee: number = isPickup ? 0 : (deliveryInfo?.deliveryFee || 0);
 
   return (
     <Card className="h-fit">
@@ -35,19 +35,26 @@ export function OrderSummary() {
             <span className="text-muted-foreground">Subtotal</span>
             <span>₦{subtotal.toLocaleString()}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Delivery Fee</span>
-            <span>
-              {deliveryFee === 0
-                ? "Calculated at next step"
-                : `₦${deliveryFee.toLocaleString()}`}
-            </span>
-          </div>
+          {!isPickup && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Estimated Delivery Fee</span>
+              <span>
+                {estimatedDeliveryFee === 0
+                  ? "Calculated at next step"
+                  : `~₦${estimatedDeliveryFee.toLocaleString()}`}
+              </span>
+            </div>
+          )}
         </div>
+        {!isPickup && (
+          <p className="text-xs text-muted-foreground -mt-2">
+            Delivery is an estimate, paid directly to the courier in cash on delivery — it isn&apos;t charged online.
+          </p>
+        )}
         <Separator />
         <div className="flex justify-between font-bold text-lg">
-          <span>Total</span>
-          <span>₦{total.toLocaleString()}</span>
+          <span>Pay Online Now</span>
+          <span>₦{subtotal.toLocaleString()}</span>
         </div>
       </CardContent>
     </Card>

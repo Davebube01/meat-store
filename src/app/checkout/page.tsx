@@ -19,7 +19,30 @@ export default function CheckoutPage() {
   const { isGuest, step } = useCheckoutStore();
   const [showGuestPrompt, setShowGuestPrompt] = useState(false);
 
+  // The cart is persisted to localStorage and rehydrates asynchronously —
+  // on a hard refresh, `items` starts as [] for a moment even when the real
+  // cart isn't empty. Without waiting for hydration, the redirect below fires
+  // on that transient empty state and bounces the user home before their
+  // actual cart ever loads. `useCart.persist` only exists in the browser
+  // (there's no real storage during Next's build-time prerender), so it's
+  // only ever touched inside an effect, never during the initial render.
+  const [hasHydrated, setHasHydrated] = useState(false);
   useEffect(() => {
+    if (useCart.persist.hasHydrated()) {
+      setHasHydrated(true);
+      return;
+    }
+    // Passively waiting on hasHydrated()/onFinishHydration alone never
+    // resolves here — this store's automatic hydrate-on-creation doesn't
+    // fire in this app's setup, so it has to be kicked off explicitly.
+    const unsub = useCart.persist.onFinishHydration(() => setHasHydrated(true));
+    useCart.persist.rehydrate();
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+
     // If cart is empty, redirect to home
     if (items.length === 0) {
       router.push("/");
@@ -32,9 +55,9 @@ export default function CheckoutPage() {
     } else {
       setShowGuestPrompt(false);
     }
-  }, [isAuthenticated, isGuest, items.length, router]);
+  }, [hasHydrated, isAuthenticated, isGuest, items.length, router]);
 
-  if (items.length === 0) return null;
+  if (!hasHydrated || items.length === 0) return null;
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50/50">

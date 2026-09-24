@@ -1,15 +1,12 @@
-import { fetchClient, API_BASE_URL, getAuthHeader } from "../client";
+import { fetchClient, API_BASE_URL, authFetch } from "../client";
 import { Product, Category } from "../user";
 
 export const uploadAdminImage = async (file: File): Promise<string> => {
   const formData = new FormData();
   formData.append('file', file);
   
-  const headers = { ...getAuthHeader() };
-  
-  const res = await fetch(`${API_BASE_URL}/admin/upload`, {
+  const res = await authFetch('/admin/upload', {
     method: 'POST',
-    headers,
     body: formData,
   });
   
@@ -40,7 +37,6 @@ export const deleteAdminProduct = async (id: string): Promise<boolean> => {
   try {
   await fetchClient(`/admin/products/${id}`, {
     method: 'DELETE',
-    headers: { ...getAuthHeader() },
   });
   return true;
   } catch (error) {
@@ -66,7 +62,6 @@ export const deleteAdminCategory = async (id: string): Promise<boolean> => {
   try {
   await fetchClient(`/admin/categories/${id}`, {
     method: 'DELETE',
-    headers: { ...getAuthHeader() },
   });
   return true;
   } catch (error) {

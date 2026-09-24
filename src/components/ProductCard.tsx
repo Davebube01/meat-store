@@ -11,9 +11,11 @@ import { API_BASE_URL } from "@/core/api/client";
 
 export function ProductCard(product: Product) {
   const addItem = useCart((state) => state.addItem);
+  const outOfStock = product.stock_quantity <= 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (outOfStock) return;
     addItem(product);
   };
 
@@ -37,22 +39,29 @@ export function ProductCard(product: Product) {
               alt={product.name}
               fill
               unoptimized
-              className="object-cover transition-transform duration-700 group-hover:scale-110"
+              className={`object-cover transition-transform duration-700 group-hover:scale-110 ${outOfStock ? "grayscale opacity-60" : ""}`}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
             />
+            {outOfStock && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="rounded-full bg-gray-900/80 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white">
+                  Out of Stock
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Content Section */}
         <div className="p-4 md:p-6 pt-4 md:pt-5 bg-linear-to-b from-white to-gray-50">
           <h3
-            className="text-xl font-bold text-green-700 tracking-tight mb-2"
+            className="text-xl font-bold text-green-700 tracking-tight mb-2 line-clamp-2 min-h-[3.5rem]"
             style={{ fontFamily: "Georgia, serif" }}
           >
             {product.name}
           </h3>
 
-          <p className="text-sm text-gray-600 mb-5 leading-relaxed">
+          <p className="text-sm text-gray-600 mb-5 leading-relaxed line-clamp-2 min-h-[2.75rem]">
             {product.description}
           </p>
 
@@ -62,13 +71,14 @@ export function ProductCard(product: Product) {
                 ₦{product.price.toLocaleString()}
               </p>
               <p className="text-xs text-gray-500 font-medium tracking-wider">
-                per {product.category === "kg" ? "kilogram" : "unit"}
+                per {product.category === "per-kg" ? "kilogram" : "unit"}
               </p>
             </div>
 
             <Button
               size="icon"
-              className="h-14 w-14 rounded-full bg-linear-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95"
+              disabled={outOfStock}
+              className="h-14 w-14 rounded-full bg-linear-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:from-green-500 disabled:hover:to-green-600"
               onClick={handleAddToCart}
             >
               <ShoppingCart className="h-6 w-6" />
