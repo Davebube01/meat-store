@@ -24,6 +24,8 @@ export interface RestockItem {
   category: string;
   price: number;
   stock_quantity: number;
+  /** The threshold in effect for this product. */
+  low_stock_threshold: number;
   sold_last_7_days: number;
   days_left: number | null;
 }

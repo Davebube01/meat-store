@@ -1,7 +1,8 @@
 "use client";
 
 import { useAdminAuthStore } from "../../core/store/useAdminAuthStore";
-import { Menu, User, Bell, Search } from "lucide-react";
+import { Menu, User, Search } from "lucide-react";
+import { NotificationBell } from "./NotificationBell";
 import { usePathname } from "next/navigation";
 
 interface AdminHeaderProps {
@@ -50,9 +51,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
 
         {/* Actions */}
         <div className="flex items-center gap-x-2">
-          <button className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all">
-            <Bell className="w-5 h-5" />
-          </button>
+          <NotificationBell />
           
           <div className="h-8 w-px bg-gray-100 mx-1 hidden sm:block" />
 

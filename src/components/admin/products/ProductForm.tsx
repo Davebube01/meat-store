@@ -33,6 +33,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
   const hasSizes = sizeRows.length > 0;
   const [costInput, setCostInput] = useState<string>(initialData?.cost_price?.toString() ?? "");
   const costPrice = costInput.trim() === "" ? undefined : parseFloat(costInput);
+  const [thresholdInput, setThresholdInput] = useState<string>(initialData?.low_stock_threshold?.toString() ?? "");
+  const lowStockThreshold = thresholdInput.trim() === "" ? undefined : parseFloat(thresholdInput);
   const [imageMode, setImageMode] = useState<ImageInputMode>(initialData?.image_url?.startsWith("http") ? "url" : "upload");
   const [previewUrl, setPreviewUrl] = useState<string>("");
 
@@ -161,6 +163,10 @@ export function ProductForm({ initialData }: ProductFormProps) {
       return;
     }
     const parts = partsInput.split(",").map((p) => p.trim()).filter(Boolean);
+    if (lowStockThreshold !== undefined && !(lowStockThreshold >= 0)) {
+      toast.warning("The low-stock alert level can't be negative.");
+      return;
+    }
     if (costPrice !== undefined && !(costPrice >= 0)) {
       toast.warning("Cost price can't be negative.");
       return;
@@ -170,6 +176,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
       weight_options: weightOptions,
       parts,
       cost_price: costPrice ?? null,
+      low_stock_threshold: lowStockThreshold ?? null,
       // With sizes, the listed price is the cheapest size (the server sets it too).
       price: weightOptions.length ? Math.min(...weightOptions.map((o) => o.price)) : formData.price,
     };
@@ -307,6 +314,24 @@ export function ProductForm({ initialData }: ProductFormProps) {
             {!hasSizes && costPrice !== undefined && (formData.price ?? 0) > 0
               ? marginLabel(formData.price ?? 0, costPrice)
               : "What one unit of stock costs you. Only admins see it; it's used for profit."}
+          </p>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="low_stock_threshold" className="text-sm font-medium text-gray-700">
+            Low-stock alert at <span className="text-gray-400 font-normal">(units of stock)</span>
+          </Label>
+          <Input
+            id="low_stock_threshold"
+            type="number"
+            value={thresholdInput}
+            onChange={(e) => setThresholdInput(e.target.value)}
+            placeholder={`Store default${initialData?.effective_low_stock_threshold !== undefined && initialData.low_stock_threshold == null ? ` (${initialData.effective_low_stock_threshold})` : ""}`}
+            min="0"
+            step="any"
+            className="border-gray-200 focus-visible:ring-[#3f7a55]/30 focus-visible:border-[#3f7a55]"
+          />
+          <p className="text-xs text-gray-400">
+            You&apos;ll get a notification when stock falls to this or below. Leave empty to use the default from Settings.
           </p>
         </div>
       </div>

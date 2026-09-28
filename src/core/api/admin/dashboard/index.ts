@@ -51,6 +51,8 @@ export interface LowStockProduct {
   slug: string;
   image_url: string | null;
   stock_quantity: number;
+  /** The threshold in effect for this product. */
+  low_stock_threshold: number;
 }
 
 export interface TopProduct {

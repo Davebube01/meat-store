@@ -51,9 +51,9 @@ function Stat({ label, value, sub, icon: Icon, tone }: { label: string; value: R
   );
 }
 
-function Runway({ item, threshold }: { item: RestockItem; threshold: number }) {
+function Runway({ item }: { item: RestockItem }) {
   const out = item.stock_quantity <= 0;
-  const pct = out ? 3 : Math.max(6, Math.min(100, (item.stock_quantity / threshold) * 100));
+  const pct = out ? 3 : Math.max(6, Math.min(100, (item.stock_quantity / (item.low_stock_threshold || 1)) * 100));
   return (
     <div className="w-40">
       <div className="h-1.5 overflow-hidden rounded-full bg-gray-100">
@@ -142,7 +142,7 @@ export default function AdminInventoryPage() {
             <Stat
               label="Low stock"
               value={data.summary.low_stock}
-              sub={`${data.summary.low_stock_threshold} or fewer left`}
+              sub={`At or below their alert level (default ${data.summary.low_stock_threshold})`}
               icon={TriangleAlert}
               tone="bg-amber-50 text-amber-600"
             />
@@ -181,7 +181,7 @@ export default function AdminInventoryPage() {
               <div className="flex flex-col items-center gap-2 px-5 py-12 text-center">
                 <PackageCheck className="h-8 w-8 text-green-500" />
                 <p className="text-sm font-medium text-gray-700">All stocked up</p>
-                <p className="text-xs text-gray-400">No active product is at or below {data.summary.low_stock_threshold}.</p>
+                <p className="text-xs text-gray-400">No active product is at or below its alert level.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -211,7 +211,7 @@ export default function AdminInventoryPage() {
                         </td>
                         <td className="hidden px-5 py-3 text-right tabular-nums text-gray-600 md:table-cell">{qty(item.sold_last_7_days)}</td>
                         <td className="px-5 py-3">
-                          <Runway item={item} threshold={data.summary.low_stock_threshold} />
+                          <Runway item={item} />
                         </td>
                         <td className="px-5 py-3 text-right">
                           <Button

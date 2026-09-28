@@ -7,7 +7,9 @@ import { Edit, Trash2, Search, ChevronDown, Eye } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
-const LOW_STOCK_THRESHOLD = 5;
+// Fallback only if the API didn't send one; the store default lives in Settings.
+const DEFAULT_LOW_STOCK_THRESHOLD = 5;
+const isLow = (p: Product) => p.stock_quantity <= (p.effective_low_stock_threshold ?? DEFAULT_LOW_STOCK_THRESHOLD);
 
 type StatusFilter = "all" | "active" | "low_stock" | "draft";
 
@@ -28,7 +30,7 @@ export function ProductList({ products, onRefresh }: ProductListProps) {
       case "draft":
         return products.filter((p) => !p.is_active);
       case "low_stock":
-        return products.filter((p) => p.stock_quantity <= LOW_STOCK_THRESHOLD);
+        return products.filter(isLow);
       default:
         return products;
     }
@@ -140,10 +142,10 @@ export function ProductList({ products, onRefresh }: ProductListProps) {
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <span className={product.stock_quantity <= LOW_STOCK_THRESHOLD ? "font-semibold text-red-600" : "text-gray-600"}>
+                    <span className={isLow(product) ? "font-semibold text-red-600" : "text-gray-600"}>
                       {product.stock_quantity}
                     </span>
-                    {product.stock_quantity <= LOW_STOCK_THRESHOLD && (
+                    {isLow(product) && (
                       <span className="ml-1.5 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-600 bg-red-50">
                         Low
                       </span>

@@ -25,7 +25,7 @@ export function LowStockCard({ items, lowCount, outCount, threshold }: {
         <div>
           <p className="text-sm font-semibold text-gray-900">Low stock</p>
           <p className="text-xs text-gray-400">
-            {outCount} out · {lowCount} at or below {threshold}
+            {outCount} out · {lowCount} low
           </p>
         </div>
         <Link href="/admin/products" className="inline-flex items-center text-xs font-semibold text-[#3f7a55] hover:underline">
@@ -37,13 +37,13 @@ export function LowStockCard({ items, lowCount, outCount, threshold }: {
         <div className="flex flex-1 flex-col items-center justify-center gap-2 px-5 py-12 text-center">
           <PackageCheck className="h-8 w-8 text-green-500" />
           <p className="text-sm font-medium text-gray-700">All stocked up</p>
-          <p className="text-xs text-gray-400">No active product is at or below {threshold}.</p>
+          <p className="text-xs text-gray-400">No active product is at or below its alert level (default {threshold}).</p>
         </div>
       ) : (
         <ul className="divide-y divide-gray-100">
           {items.map((p) => {
             const out = p.stock_quantity <= 0;
-            const pct = Math.max(4, Math.min(100, (p.stock_quantity / threshold) * 100));
+            const pct = Math.max(4, Math.min(100, (p.stock_quantity / (p.low_stock_threshold || threshold)) * 100));
             return (
               <li key={p.id} className="flex items-center gap-3 px-5 py-3">
                 <Thumb url={p.image_url} name={p.name} />

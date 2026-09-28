@@ -19,6 +19,10 @@ export interface Product {
   weight_options: WeightOption[];
   /** Cost per unit of stock. Only returned by admin endpoints. */
   cost_price?: number | null;
+  /** Admin only: this product's own alert level (null = store default)... */
+  low_stock_threshold?: number | null;
+  /** ...and the level actually in effect. */
+  effective_low_stock_threshold?: number;
   parts?: string[];
   stock_quantity: number;
   is_active: boolean;

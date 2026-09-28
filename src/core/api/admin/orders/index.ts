@@ -1,6 +1,6 @@
 import { fetchClient } from "../../client";
 
-export type AdminOrderStatus = 'pending' | 'paid' | 'processing' | 'in_transit' | 'shipped' | 'delivered' | 'cancelled';
+export type AdminOrderStatus = 'pending' | 'awaiting_verification' | 'paid' | 'processing' | 'in_transit' | 'shipped' | 'delivered' | 'cancelled';
 /** @deprecated use AdminOrderStatus */
 export type OrderStatus = AdminOrderStatus;
 
@@ -54,6 +54,37 @@ export interface Order {
   cancelled_at?: string | null;
   paid_at?: string | null;
   payment_expires_at?: string | null;
+  delivery_method?: "delivery" | "pickup";
+  payment_reference?: string | null;
+  // Present on list and detail responses (not on action responses).
+  customer_name?: string;
+  customer_email?: string | null;
+  customer_phone?: string | null;
+  is_guest?: boolean;
+  /** The delivery slot has ended but the order hasn't gone out yet. */
+  overdue?: boolean;
+  delivery_zone_name?: string | null;
+  /** Statuses PUT /status accepts right now. */
+  allowed_moves?: string[];
+}
+
+export type OrderView = "all" | "needs_action" | "unpaid" | "paid" | "processing" | "in_transit" | "delivered" | "cancelled";
+
+export interface OrderListParams {
+  view?: OrderView;
+  search?: string;
+  method?: "delivery" | "pickup";
+  zone?: string;
+  date_from?: string; // YYYY-MM-DD
+  date_to?: string;
+  sort?: "newest" | "oldest";
+  skip?: number;
+  limit?: number;
+}
+
+export interface OrdersSummary {
+  counts: Record<OrderView, number>;
+  overdue: number;
 }
 
 export interface DispatchPayload {
@@ -63,9 +94,19 @@ export interface DispatchPayload {
   courier_reference?: string;
 }
 
-export const getOrders = async (skip: number = 0, limit: number = 100): Promise<Order[]> => {
-  return fetchClient<Order[]>(`/admin/orders?skip=${skip}&limit=${limit}`);
+export const getOrders = async (params: OrderListParams | number = {}, legacyLimit?: number): Promise<Order[]> => {
+  // Older callers pass (skip, limit).
+  const p: OrderListParams = typeof params === "number" ? { skip: params, limit: legacyLimit } : params;
+  const q = new URLSearchParams();
+  Object.entries(p).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== "" && !(k === "view" && v === "all")) q.set(k, String(v));
+  });
+  const qs = q.toString();
+  return fetchClient<Order[]>(`/admin/orders/${qs ? `?${qs}` : ""}`);
 };
+
+export const getOrdersSummary = async (): Promise<OrdersSummary> =>
+  fetchClient<OrdersSummary>("/admin/orders/summary");
 
 export const getOrderById = async (id: string): Promise<Order> => {
   return fetchClient<Order>(`/admin/orders/${id}`);

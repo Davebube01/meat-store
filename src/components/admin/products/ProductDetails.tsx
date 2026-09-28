@@ -109,6 +109,12 @@ export function ProductDetails({ product: initialProduct }: ProductDetailsProps)
                   : "None"}
               </dd>
 
+              <dt className="text-gray-500">Low-stock alert</dt>
+              <dd className="text-gray-900">
+                At {product.effective_low_stock_threshold ?? "—"} or below
+                {product.low_stock_threshold == null && <span className="text-gray-400"> (store default)</span>}
+              </dd>
+
               <dt className="text-gray-500">Cost price</dt>
               <dd className="text-gray-900">
                 {product.cost_price == null ? (
