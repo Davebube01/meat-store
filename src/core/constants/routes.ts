@@ -5,7 +5,8 @@
   Users, 
   Settings,
   Tags,
-  Boxes
+  Boxes,
+  Store
 } from "lucide-react";
 
 export const ADMIN_ROUTES = [
@@ -28,6 +29,11 @@ export const ADMIN_ROUTES = [
     label: "Inventory",
     icon: Boxes,
     href: "/admin/inventory",
+  },
+  {
+    label: "Sales",
+    icon: Store,
+    href: "/admin/sales",
   },
   {
     label: "Orders",

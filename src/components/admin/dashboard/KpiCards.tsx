@@ -79,7 +79,14 @@ export function KpiCards({ kpis, range }: { kpis: DashboardKpis; range: Dashboar
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
       <Card label="Revenue" icon={Banknote} iconClass="bg-green-50 text-[#3f7a55]" value={naira(kpis.revenue)}>
-        <Delta current={kpis.revenue} previous={kpis.revenue_prev} range={range} />
+        <div className="space-y-1">
+          <Delta current={kpis.revenue} previous={kpis.revenue_prev} range={range} />
+          {kpis.walk_in_revenue > 0 && (
+            <Link href="/admin/sales" className="block text-xs text-gray-500 hover:text-[#3f7a55]">
+              {naira(kpis.walk_in_revenue)} at the counter
+            </Link>
+          )}
+        </div>
       </Card>
       <Card
         label="Gross profit"

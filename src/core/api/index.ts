@@ -9,6 +9,7 @@ export * from "./admin/upload";
 export * from "./admin/customers";
 export * from "./admin/dashboard";
 export * from "./admin/notifications";
+export * from "./admin/sales";
 export * from "./admin/inventory";
 export * from "./admin/settings";
 // Admin orders — explicit re-exports to avoid collision with user/orders

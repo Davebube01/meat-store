@@ -9,6 +9,8 @@ export interface DashboardKpis {
   orders_prev: number;
   avg_order_value: number;
   avg_order_value_prev: number;
+  /** Of revenue, what was taken at the counter (walk-in sales). */
+  walk_in_revenue: number;
   /** Revenue minus cost over items with a known cost; null when none have one. */
   gross_profit: number | null;
   gross_profit_prev: number | null;
