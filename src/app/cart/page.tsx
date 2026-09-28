@@ -1,180 +1,147 @@
 "use client";
 
-import { useCart } from "@/core/store/useCart";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useSyncExternalStore } from "react";
+import { ArrowLeft, ArrowRight, Loader2, Lock, ShoppingBag, Store, Truck } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag } from "lucide-react";
-import Link from "next/link";
-import Image from "next/image";
-import { useEffect, useState } from "react";
-import { API_BASE_URL } from "@/core/api/client";
+import { CartLine } from "@/components/cart/CartLine";
+import { useCartCheck } from "@/components/cart/useCartCheck";
+import { useCart } from "@/core/store/useCart";
+
+const naira = (n: number) => `₦${Math.round(n).toLocaleString("en-NG")}`;
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, getCartTotal, clearCart } =
-    useCart();
-  const [mounted, setMounted] = useState(false);
+  const router = useRouter();
+  const { items, getCartTotal, clearCart } = useCart();
+  // The cart lives in localStorage; render nothing cart-shaped until it's loaded.
+  const hydrated = useSyncExternalStore(
+    (onChange) => useCart.persist.onFinishHydration(onChange),
+    () => useCart.persist.hasHydrated(),
+    () => false,
+  );
+  const { results, blocked, notices, checking, failed } = useCartCheck(hydrated);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const total = mounted ? getCartTotal() : 0;
-  const deliveryFee = 2000;
-  const finalTotal = total + deliveryFee;
-
-  const getFullImageUrl = (url: string | undefined) => {
-    if (!url) return "/placeholder.jpg";
-    if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:")) return url;
-    return `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
-  };
-
-  if (!mounted) return null;
+  const count = items.reduce((n, i) => n + i.quantity, 0);
+  const blockedTotal = blocked.reduce((n, b) => {
+    const item = items.find((i) => i.cartId === b.key);
+    return n + (item ? item.price * item.quantity : 0);
+  }, 0);
+  const subtotal = getCartTotal() - blockedTotal;
+  const canCheckout = items.length > 0 && blocked.length === 0;
 
   return (
-    <div className="flex min-h-screen flex-col bg-background font-sans">
+    <div className="flex min-h-screen flex-col bg-white">
       <Header />
-      <main className="flex-1 py-12 bg-[#FFF8F1]">
-        <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-bold font-serif text-[#1a1a1a] mb-8">
-            Your Cart
-          </h1>
+      <main className="flex-1 bg-[#FFF8F1]">
+        <div className="container mx-auto px-4 py-8 md:py-12">
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h1 className="font-serif text-3xl font-semibold tracking-tight text-[#1a1a1a] md:text-4xl">Your cart</h1>
+              {hydrated && items.length > 0 && (
+                <p className="mt-1 text-sm text-gray-500">
+                  {count} item{count === 1 ? "" : "s"}
+                  {checking && (
+                    <span className="ml-2 inline-flex items-center gap-1 text-gray-400">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Checking prices and stock
+                    </span>
+                  )}
+                </p>
+              )}
+            </div>
+            <Link href="/products" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#3f7a55] hover:underline">
+              <ArrowLeft className="h-4 w-4" /> Continue shopping
+            </Link>
+          </div>
 
-          {items.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-3xl shadow-sm">
-              <ShoppingBag className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Your cart is empty
-              </h2>
-              <p className="text-gray-500 mb-8">
-                Looks like you haven't added anything yet.
-              </p>
-              <Link href="/products">
-                <Button
-                  size="lg"
-                  className="bg-[#22c55e] hover:bg-[#16a34a] text-white"
-                >
-                  Browse Products
-                </Button>
+          {!hydrated ? (
+            <div className="flex justify-center p-20 text-gray-400">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : items.length === 0 ? (
+            <div className="mx-auto max-w-lg rounded-3xl border border-[#f0e6da] bg-white px-6 py-14 text-center">
+              <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#f4f7f5] text-[#3f7a55]">
+                <ShoppingBag className="h-8 w-8" />
+              </span>
+              <h2 className="mt-5 font-serif text-2xl font-semibold text-gray-900">Your cart is empty</h2>
+              <p className="mt-2 text-gray-500">Fresh cuts are waiting. Add something and it&apos;ll show up here.</p>
+              <Link
+                href="/products"
+                className="mt-6 inline-flex h-12 items-center gap-2 rounded-xl bg-[#22c55e] px-6 font-semibold text-white shadow-lg shadow-green-500/25 hover:bg-[#16a34a]"
+              >
+                Browse products <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           ) : (
-            <div className="grid lg:grid-cols-3 gap-8">
-              {/* Cart Items */}
-              <div className="lg:col-span-2 space-y-4">
-                {items.map((item) => (
-                  <div
-                    key={item.cartId || item.id}
-                    className="flex gap-4 p-4 bg-white rounded-2xl shadow-sm items-center"
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
+              <section className="rounded-2xl border border-gray-200 bg-white px-4 sm:px-6">
+                {blocked.length > 0 && (
+                  <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+                    {blocked.length === 1 ? "One item" : `${blocked.length} items`} in your cart can&apos;t be bought right now. Remove{" "}
+                    {blocked.length === 1 ? "it" : "them"} to check out.
+                  </p>
+                )}
+                <ul className="divide-y divide-gray-100">
+                  {items.map((item) => (
+                    <CartLine key={item.cartId} item={item} check={results.get(item.cartId)} notice={notices[item.cartId]} />
+                  ))}
+                </ul>
+                <div className="flex justify-end border-t border-gray-100 py-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm("Remove everything from your cart?")) clearCart();
+                    }}
+                    className="text-sm font-medium text-gray-500 hover:text-red-600"
                   >
-                    <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-gray-100">
-                      <Image
-                        src={getFullImageUrl(item.image_url)}
-                        alt={item.name}
-                        fill
-                        unoptimized
-                        className="object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-gray-900 truncate">
-                        {item.name}
-                      </h3>
-                      {item.selectedOption && (
-                        <p className="text-sm font-medium text-gray-700 mb-1">
-                          Option: {item.selectedOption}
-                        </p>
-                      )}
-                      <p className="text-sm text-gray-500 mb-2">
-                        ₦{item.price.toLocaleString()} /{" "}
-                        {item.category === "kg" ? "kg" : "unit"}
-                      </p>
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-                          <button
-                            className="p-1 hover:bg-white rounded-md transition-colors disabled:opacity-50"
-                            onClick={() =>
-                              updateQuantity(
-                                item.cartId || item.id,
-                                item.quantity - 1,
-                              )
-                            }
-                            disabled={item.quantity <= 1}
-                          >
-                            <Minus className="h-4 w-4" />
-                          </button>
-                          <span className="w-8 text-center font-medium text-sm">
-                            {item.quantity}
-                          </span>
-                          <button
-                            className="p-1 hover:bg-white rounded-md transition-colors"
-                            onClick={() =>
-                              updateQuantity(
-                                item.cartId || item.id,
-                                item.quantity + 1,
-                              )
-                            }
-                          >
-                            <Plus className="h-4 w-4" />
-                          </button>
-                        </div>
-                        <button
-                          onClick={() => removeItem(item.cartId || item.id)}
-                          className="text-red-500 hover:text-red-700 p-2"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="text-right font-bold text-lg">
-                      ₦{(item.price * item.quantity).toLocaleString()}
-                    </div>
-                  </div>
-                ))}
-
-                <Button
-                  variant="outline"
-                  className="mt-4 text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
-                  onClick={clearCart}
-                >
-                  Clear Cart
-                </Button>
-              </div>
-
-              {/* Order Summary */}
-              <div className="lg:col-span-1">
-                <div className="bg-white rounded-3xl shadow-sm p-6 sticky top-24">
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">
-                    Order Summary
-                  </h2>
-
-                  <div className="space-y-4 mb-6">
-                    <div className="flex justify-between text-gray-600">
-                      <span>Subtotal</span>
-                      <span>₦{total.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between text-gray-600">
-                      <span>Delivery Fee (Abuja)</span>
-                      <span>₦{deliveryFee.toLocaleString()}</span>
-                    </div>
-                    <div className="border-t pt-4 flex justify-between font-bold text-lg text-gray-900">
-                      <span>Total</span>
-                      <span>₦{finalTotal.toLocaleString()}</span>
-                    </div>
-                  </div>
-
-                  <Button className="w-full h-12 text-lg bg-[#22c55e] hover:bg-[#16a34a] text-white mb-4">
-                    Proceed to Checkout
-                  </Button>
-
-                  <Link
-                    href="/products"
-                    className="flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-gray-900 font-medium"
-                  >
-                    <ArrowLeft className="h-4 w-4" /> Continue Shopping
-                  </Link>
+                    Clear cart
+                  </button>
                 </div>
-              </div>
+              </section>
+
+              <aside className="rounded-2xl border border-gray-200 bg-white lg:sticky lg:top-24">
+                <h2 className="border-b border-gray-100 px-5 py-4 font-semibold text-gray-900">Summary</h2>
+                <div className="space-y-2.5 px-5 py-4 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Items</span>
+                    <span className="tabular-nums text-gray-900">{naira(subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-gray-500">Delivery</span>
+                    <span className="text-right text-gray-500">Chosen at checkout</span>
+                  </div>
+                </div>
+                <div className="flex items-baseline justify-between border-t border-gray-100 px-5 py-4">
+                  <span className="font-semibold text-gray-900">Subtotal</span>
+                  <span className="text-2xl font-bold tabular-nums text-gray-900">{naira(subtotal)}</span>
+                </div>
+                <div className="px-5 pb-5">
+                  <button
+                    type="button"
+                    disabled={!canCheckout}
+                    onClick={() => router.push("/checkout")}
+                    className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#22c55e] font-semibold text-white shadow-lg shadow-green-500/25 transition-colors hover:bg-[#16a34a] disabled:cursor-not-allowed disabled:bg-gray-300 disabled:shadow-none"
+                  >
+                    <Lock className="h-4 w-4" /> Checkout
+                  </button>
+                  {!canCheckout && blocked.length > 0 && (
+                    <p className="mt-2 text-center text-xs text-red-600">Remove unavailable items first.</p>
+                  )}
+                  {failed && (
+                    <p className="mt-2 text-center text-xs text-gray-500">Couldn&apos;t re-check stock just now. Checkout will confirm it.</p>
+                  )}
+                </div>
+                <ul className="space-y-2.5 border-t border-gray-100 px-5 py-4 text-xs text-gray-600">
+                  <li className="flex gap-2">
+                    <Truck className="h-4 w-4 shrink-0 text-[#3f7a55]" />
+                    Delivery across Abuja in a 1-hour slot you choose. The fee is paid in cash to the courier.
+                  </li>
+                  <li className="flex gap-2">
+                    <Store className="h-4 w-4 shrink-0 text-[#3f7a55]" /> Or collect it from our shop for free.
+                  </li>
+                </ul>
+              </aside>
             </div>
           )}
         </div>

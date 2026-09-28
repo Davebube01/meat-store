@@ -6,7 +6,9 @@
   Settings,
   Tags,
   Boxes,
-  Store
+  Store,
+  History,
+  FileDown
 } from "lucide-react";
 
 export const ADMIN_ROUTES = [
@@ -44,6 +46,16 @@ export const ADMIN_ROUTES = [
     label: "Customers",
     icon: Users,
     href: "/admin/customers",
+  },
+  {
+    label: "Exports",
+    icon: FileDown,
+    href: "/admin/exports",
+  },
+  {
+    label: "Activity",
+    icon: History,
+    href: "/admin/activity",
   },
   {
     label: "Settings",
