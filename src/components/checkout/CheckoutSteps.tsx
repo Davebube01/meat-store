@@ -190,8 +190,8 @@ export function CheckoutSteps() {
       const cartItems = useCart.getState().items.map((item) => ({
         product_id: item.id,
         quantity: item.quantity,
-        selected_option: item.selectedOption,
-        price_at_time: item.price,
+        weight_option: item.weightOption,
+        part: item.part,
       }));
 
       // 1. Create the order

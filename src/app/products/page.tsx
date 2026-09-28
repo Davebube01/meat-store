@@ -1,15 +1,22 @@
 ﻿import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ProductList } from "./ProductList";
-import { getProducts } from "@/core/api";
+import { getCategories, getProducts } from "@/core/api";
 
 export const metadata = {
   title: "All Products - Goat Meat Store",
   description: "Browse our selection of premium fresh goat meat.",
 };
 
-export default async function ProductsPage() {
-  const products = await getProducts();
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const [products, categories, params] = await Promise.all([getProducts(), getCategories(), searchParams]);
+  // ?category=<slug> preselects the filter (links from product pages use it).
+  const requested = typeof params.category === "string" ? params.category : undefined;
+  const initialCategory = categories.some((c) => c.slug === requested) ? requested : "all";
 
   return (
     <div className="flex min-h-screen flex-col bg-background font-sans">
@@ -25,7 +32,7 @@ export default async function ProductsPage() {
             </p>
           </div>
 
-          <ProductList initialProducts={products} />
+          <ProductList initialProducts={products} categories={categories} initialCategory={initialCategory} />
         </div>
       </main>
       <Footer />

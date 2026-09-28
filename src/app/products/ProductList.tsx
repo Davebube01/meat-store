@@ -2,13 +2,21 @@
 
 import { useState } from "react";
 import { ProductCard } from "@/components/ProductCard";
-import { Product } from "@/core/api";
+import { Category, Product } from "@/core/api";
 import { Search, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
-export function ProductList({ initialProducts }: { initialProducts: Product[] }) {
+export function ProductList({
+  initialProducts,
+  categories,
+  initialCategory = "all",
+}: {
+  initialProducts: Product[];
+  categories: Category[];
+  initialCategory?: string;
+}) {
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("all");
+  const [category, setCategory] = useState(initialCategory);
 
   const filteredProducts = initialProducts.filter((p) => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.description.toLowerCase().includes(search.toLowerCase());
@@ -39,9 +47,12 @@ export function ProductList({ initialProducts }: { initialProducts: Product[] })
             onChange={(e) => setCategory(e.target.value)}
           >
             <option value="all">All Categories</option>
-            <option value="full">Full Goats</option>
-            <option value="kg">By Kilogram</option>
-            <option value="part">Goat Parts</option>
+            {/* Products are filed by category slug. */}
+            {categories.map((c) => (
+              <option key={c.slug} value={c.slug}>
+                {c.name}
+              </option>
+            ))}
           </select>
           <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
              <ChevronDown className="h-5 w-5 text-gray-500" />

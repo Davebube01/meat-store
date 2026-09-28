@@ -11,6 +11,8 @@ import { ImagePlus, Link2, X, Upload, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { toast } from "react-toastify";
 import { API_BASE_URL } from "@/core/api/client";
+import { SizeOptionsEditor } from "./SizeOptionsEditor";
+import { SizeRow, parseSizeRows, toSizeRows } from "./sizeRows";
 
 
 interface ProductFormProps {
@@ -26,6 +28,9 @@ export function ProductForm({ initialData }: ProductFormProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [priceInput, setPriceInput] = useState<string>(initialData?.price?.toString() ?? "");
   const [stockInput, setStockInput] = useState<string>(initialData?.stock_quantity?.toString() ?? "0");
+  const [sizeRows, setSizeRows] = useState<SizeRow[]>(toSizeRows(initialData?.weight_options));
+  const [partsInput, setPartsInput] = useState<string>(initialData?.parts?.join(", ") ?? "");
+  const hasSizes = sizeRows.length > 0;
   const [imageMode, setImageMode] = useState<ImageInputMode>(initialData?.image_url?.startsWith("http") ? "url" : "upload");
   const [previewUrl, setPreviewUrl] = useState<string>("");
 
@@ -87,7 +92,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
   const handleStockChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
     setStockInput(raw);
-    const parsed = parseInt(raw, 10);
+    const parsed = parseFloat(raw);
     setFormData((prev) => ({ ...prev, stock_quantity: isNaN(parsed) ? 0 : parsed }));
   };
 
@@ -148,21 +153,35 @@ export function ProductForm({ initialData }: ProductFormProps) {
       toast.warning("Please provide an image.");
       return;
     }
+    const weightOptions = parseSizeRows(sizeRows);
+    if (typeof weightOptions === "string") {
+      toast.warning(weightOptions);
+      return;
+    }
+    const parts = partsInput.split(",").map((p) => p.trim()).filter(Boolean);
+    const payload: Partial<Product> = {
+      ...formData,
+      weight_options: weightOptions,
+      parts,
+      // With sizes, the listed price is the cheapest size (the server sets it too).
+      price: weightOptions.length ? Math.min(...weightOptions.map((o) => o.price)) : formData.price,
+    };
+    if (!(payload.price! > 0)) {
+      toast.warning("Set a price above zero.");
+      return;
+    }
     setLoading(true);
 
     try {
       let savedProduct: Product | undefined;
 
       if (initialData) {
-        savedProduct = await updateAdminProduct(initialData.id, formData);
+        savedProduct = await updateAdminProduct(initialData.id, payload);
         toast.success("Product updated successfully!");
       } else {
-        const submissionData = { ...formData };
+        const submissionData = { ...payload };
         if (!submissionData.slug && submissionData.name) {
           submissionData.slug = submissionData.name.toLowerCase().replace(/ /g, "-");
-        }
-        if (!submissionData.weight_options || submissionData.weight_options.length === 0) {
-          submissionData.weight_options = ["1kg"];
         }
         savedProduct = await createAdminProduct(submissionData as Omit<Product, "id">);
         toast.success("Product created successfully!");
@@ -209,12 +228,13 @@ export function ProductForm({ initialData }: ProductFormProps) {
             id="price"
             name="price"
             type="number"
-            value={priceInput}
+            value={hasSizes ? "" : priceInput}
             onChange={handlePriceChange}
-            required
-            placeholder="0"
+            required={!hasSizes}
+            disabled={hasSizes}
+            placeholder={hasSizes ? "Set per size below" : "0"}
             min="0"
-            className="border-gray-200 focus-visible:ring-[#3f7a55]/30 focus-visible:border-[#3f7a55]"
+            className="border-gray-200 focus-visible:ring-[#3f7a55]/30 focus-visible:border-[#3f7a55] disabled:bg-gray-50"
           />
         </div>
         <div className="grid gap-2">
@@ -257,11 +277,26 @@ export function ProductForm({ initialData }: ProductFormProps) {
               required
               placeholder="0"
               min="0"
-              step="1"
+              step="any"
               className="border-gray-200 focus-visible:ring-[#3f7a55]/30 focus-visible:border-[#3f7a55]"
             />
           )}
         </div>
+      </div>
+
+      <SizeOptionsEditor rows={sizeRows} onChange={setSizeRows} />
+
+      <div className="grid gap-2">
+        <Label htmlFor="parts" className="text-sm font-medium text-gray-700">
+          Cuts <span className="text-gray-400 font-normal">(optional, comma-separated — same price for every cut)</span>
+        </Label>
+        <Input
+          id="parts"
+          value={partsInput}
+          onChange={(e) => setPartsInput(e.target.value)}
+          placeholder="e.g. Hind leg, Front leg"
+          className="border-gray-200 focus-visible:ring-[#3f7a55]/30 focus-visible:border-[#3f7a55]"
+        />
       </div>
 
       <div className="grid gap-2">

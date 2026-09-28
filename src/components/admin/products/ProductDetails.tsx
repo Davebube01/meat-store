@@ -99,9 +99,13 @@ export function ProductDetails({ product: initialProduct }: ProductDetailsProps)
               <dt className="text-gray-500">Slug</dt>
               <dd className="font-mono text-gray-900">{product.slug}</dd>
 
-              <dt className="text-gray-500">Weight Options</dt>
+              <dt className="text-gray-500">Sizes</dt>
               <dd className="text-gray-900">
-                {product.weight_options.join(", ")}
+                {product.weight_options.length
+                  ? product.weight_options
+                      .map((o) => `${o.label} · ₦${o.price.toLocaleString()} (uses ${o.stock_units})`)
+                      .join(", ")
+                  : "None"}
               </dd>
 
               {product.parts && (
