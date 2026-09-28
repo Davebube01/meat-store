@@ -1,5 +1,6 @@
 "use client";
 
+import { adminLandingPath } from "@/core/constants/routes";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAdminAuthStore } from "@/core/store/useAdminAuthStore";
@@ -38,8 +39,8 @@ export default function AdminLoginPage() {
       const user = await getAdminMe();
       setAuth(data.access_token, user);
 
-      toast.success("Welcome back, Admin!");
-      router.push("/admin/dashboard");
+      toast.success(`Welcome back${user?.full_name ? `, ${user.full_name.split(" ")[0]}` : ""}!`);
+      router.push(adminLandingPath(user?.permissions));
     } catch (err: any) {
       toast.error(err.message || "Admin login failed");
     } finally {

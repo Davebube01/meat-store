@@ -13,8 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { naira } from "@/components/admin/sales/ticket";
-import { COUNTER_PAYMENTS, getAdminSettings, getSale, voidSale } from "@/core/api";
+import { COUNTER_PAYMENTS, getSale, voidSale } from "@/core/api";
+import { getStoreInfo } from "@/core/api/user/store";
 import { shortOrderId } from "@/lib/orderStatus";
+import { useAdminCan } from "@/core/store/useAdminCan";
 
 const VOID_REASONS = ["Rung up by mistake", "Customer returned it", "Wrong amount charged"];
 
@@ -28,10 +30,11 @@ export default function SaleReceiptPage() {
   const justCreated = useSearchParams().get("new") === "1";
   const queryClient = useQueryClient();
   const [voiding, setVoiding] = useState(false);
+  const can = useAdminCan();
   const [reason, setReason] = useState("");
 
   const { data: sale, isPending, isError, error } = useQuery({ queryKey: ["admin-sale", id], queryFn: () => getSale(id) });
-  const { data: settings } = useQuery({ queryKey: ["admin-settings"], queryFn: getAdminSettings });
+  const { data: store } = useQuery({ queryKey: ["store-info"], queryFn: getStoreInfo });
 
   const voidMutation = useMutation({
     mutationFn: () => voidSale(id, reason.trim()),
@@ -63,7 +66,6 @@ export default function SaleReceiptPage() {
   }
 
   const voided = sale.status === "cancelled";
-  const store = settings?.store;
   const paidBy = COUNTER_PAYMENTS.find((m) => m.key === sale.payment_method)?.label ?? sale.payment_method;
 
   return (
@@ -82,7 +84,7 @@ export default function SaleReceiptPage() {
           <ArrowLeft className="h-4 w-4" /> Sales
         </Link>
         <div className="flex gap-2">
-          {!voided && (
+          {!voided && can("sales.void") && (
             <Button variant="outline" onClick={() => setVoiding(true)} className="text-red-600 hover:text-red-700">
               <Ban className="mr-2 h-4 w-4" /> Void sale
             </Button>

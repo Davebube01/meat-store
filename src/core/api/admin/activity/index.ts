@@ -1,6 +1,6 @@
 import { authFetch, fetchClient } from "../../client";
 
-export type ActivityEntityType = "product" | "category" | "order" | "sale" | "settings" | "admin";
+export type ActivityEntityType = "product" | "category" | "order" | "sale" | "settings" | "staff" | "admin";
 
 export interface ActivityEntry {
   id: string;

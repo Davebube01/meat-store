@@ -31,6 +31,11 @@ import { useState } from "react";
 export function Header() {
   const { isAuthenticated, user } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  // One place for orders: your order history when signed in, the guest
+  // lookup (order number + email) when not.
+  const ordersLink = isAuthenticated
+    ? { href: "/orders", label: "My orders" }
+    : { href: "/order-tracking", label: "Track order" };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-backdrop-filter:bg-white/60">
@@ -67,20 +72,12 @@ export function Header() {
                   Shop
                 </Link>
                 <Link
-                  href="/order-tracking"
+                  href={ordersLink.href}
                   className="text-lg font-medium hover:text-[#3f7a55] transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  Track order
+                  {ordersLink.label}
                 </Link>
-                <Link
-                  href="/orders"
-                  className="text-lg font-medium hover:text-[#3f7a55] transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Orders
-                </Link>
-                {/* Add more links here as needed */}
               </nav>
             </SheetContent>
           </Sheet>
@@ -108,16 +105,10 @@ export function Header() {
               Shop
             </Link>
             <Link
-              href="/order-tracking"
+              href={ordersLink.href}
               className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
             >
-              Track order
-            </Link>
-            <Link
-              href="/orders"
-              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-            >
-              Orders
+              {ordersLink.label}
             </Link>
           </nav>
 

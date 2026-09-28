@@ -7,6 +7,10 @@ export interface AdminUser {
   full_name?: string;
   is_superuser: boolean;
   is_active: boolean;
+  /** "owner" | "manager" | "cashier" */
+  role?: string;
+  /** What this role may do; the admin UI hides what isn't listed. */
+  permissions?: string[];
 }
 
 interface AdminAuthState {

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { naira } from "@/components/admin/sales/ticket";
 import { COUNTER_PAYMENTS, getSalesDay } from "@/core/api";
 import { shortOrderId } from "@/lib/orderStatus";
+import { useAdminCan } from "@/core/store/useAdminCan";
 
 const todayInLagos = () => new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Lagos" });
 const time = (iso: string) =>
@@ -33,6 +34,7 @@ function Stat({ label, value, sub, icon: Icon }: { label: string; value: string;
 export default function SalesPage() {
   const router = useRouter();
   const [day, setDay] = useState(todayInLagos());
+  const can = useAdminCan();
   const { data, isPending, isError, error, refetch } = useQuery({
     queryKey: ["admin-sales", day],
     queryFn: () => getSalesDay(day),
@@ -59,9 +61,11 @@ export default function SalesPage() {
             onChange={(e) => e.target.value && setDay(e.target.value)}
             className="w-40"
           />
-          <Button asChild className="bg-[#3f7a55] hover:bg-[#2d583d]">
-            <Link href="/admin/sales/new"><Plus className="mr-2 h-4 w-4" /> New sale</Link>
-          </Button>
+          {can("sales.create") && (
+            <Button asChild className="bg-[#3f7a55] hover:bg-[#2d583d]">
+              <Link href="/admin/sales/new"><Plus className="mr-2 h-4 w-4" /> New sale</Link>
+            </Button>
+          )}
         </div>
       </div>
 

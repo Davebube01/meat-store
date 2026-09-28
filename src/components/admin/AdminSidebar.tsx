@@ -10,6 +10,7 @@ import {
 import { logout } from "@/core/auth/logout";
 import { useEffect } from "react";
 import { ADMIN_ROUTES } from "@/core/constants/routes";
+import { useAdminCan } from "@/core/store/useAdminCan";
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ interface AdminSidebarProps {
 }
 
 export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
+  const can = useAdminCan();
   const pathname = usePathname();
 
   // Close sidebar on navigation (mobile)
@@ -56,7 +58,7 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
 
         {/* Navigation Links */}
         <nav className="flex-1 px-4 py-2 space-y-1">
-          {ADMIN_ROUTES.map((route) => {
+          {ADMIN_ROUTES.filter((route) => can(route.permission)).map((route) => {
             const isActive = pathname === route.href || pathname.startsWith(`${route.href}/`);
             
             return (

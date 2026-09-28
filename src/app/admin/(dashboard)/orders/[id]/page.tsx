@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useAdminCan } from "@/core/store/useAdminCan";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import {
@@ -66,6 +67,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 }
 
 export default function AdminOrderPage() {
+  const can = useAdminCan();
   const { id } = useParams() as { id: string };
   const queryClient = useQueryClient();
   const [dispatchOpen, setDispatchOpen] = useState(false);
@@ -153,7 +155,7 @@ export default function AdminOrderPage() {
   const moves = new Set(o.allowed_moves ?? []);
   const canDispatch = !pickup && !!d && (o.status === "paid" || o.status === "processing");
   const canConfirm = !pickup && o.status === "in_transit";
-  const canCancel = !isFinished(o.status) && o.status !== "in_transit";
+  const canCancel = can("orders.cancel") && !isFinished(o.status) && o.status !== "in_transit";
   const unpaidOnline = (o.status === "pending" || o.status === "awaiting_verification") && o.payment_method !== "cod";
   const busy = move.isPending || dispatch.isPending || confirm.isPending;
 

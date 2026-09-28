@@ -1,96 +1,54 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import {
-  AlertCircle,
-  ArrowLeft,
-  Bike,
-  CheckCircle2,
-  Copy,
-  Info,
-  KeyRound,
-  Loader2,
-  MapPin,
-  Package,
-  Phone,
-  ShoppingBag,
-  Store,
-  Truck,
-  XCircle,
+  AlertCircle, ArrowLeft, Clock, Copy, Info, Loader2, Mail, MapPin, Phone, RefreshCw, RotateCcw, Store, XCircle,
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { SignInModal } from "@/components/SignInModal";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { CancelOrderDialog } from "@/components/orders/CancelOrderDialog";
 import { PaymentDeadline } from "@/components/orders/PaymentDeadline";
 import { PayNow } from "@/components/orders/PayNow";
+import { OrderProgress, PinAndCourier } from "@/components/orders/OrderStatusParts";
+import { longDay, orderHeadline } from "@/components/orders/orderStatusText";
+import { buyAgain } from "@/components/orders/buyAgain";
 import { cn } from "@/lib/utils";
 import { getThumbnailUrl } from "@/lib/imageUrl";
-import {
-  CUSTOMER_CANCEL_REASONS,
-  describeCancelledBy,
-  getStatusInfo,
-  isFinished,
-  isUnpaid,
-  shortOrderId,
-} from "@/lib/orderStatus";
-import { cancelUserOrder, getUserOrderById, UserOrder } from "@/core/api/user/orders";
+import { CUSTOMER_CANCEL_REASONS, describeCancelledBy, getStatusInfo, isFinished, isUnpaid, shortOrderId } from "@/lib/orderStatus";
+import { cancelUserOrder, getUserOrderById, type UserOrder } from "@/core/api/user/orders";
+import { getDeliveryZones } from "@/core/api/user/delivery";
+import { getStoreInfo } from "@/core/api/user/store";
 import { useAuthStore } from "@/core/store/useAuthStore";
 
 const LIVE_REFRESH_MS = 20_000;
+const naira = (n: number) => `₦${Math.round(n).toLocaleString("en-NG")}`;
+const when = (iso: string) =>
+  new Date(iso).toLocaleString("en-NG", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Africa/Lagos" });
 
-function buildTimeline(order: UserOrder) {
-  const pickup = order.delivery_method === "pickup";
-  const steps = [
-    { title: "Order placed", description: "We've received your order.", icon: ShoppingBag },
-    { title: "Being prepared", description: "Our team is getting your order ready.", icon: Package },
-    {
-      title: pickup ? "Ready for pickup" : "Out for delivery",
-      description: pickup ? "Your order is ready to collect at our store." : "A rider is bringing it to you.",
-      icon: pickup ? Store : Truck,
-    },
-    {
-      title: pickup ? "Picked up" : "Delivered",
-      description: pickup ? "You've collected your order." : "Your order has arrived.",
-      icon: CheckCircle2,
-    },
-  ];
-
-  const current =
-    order.status === "delivered" ? 3 : order.status === "in_transit" ? 2 : order.status === "processing" ? 1 : 0;
-
-  return steps.map((step, index) => ({
-    ...step,
-    state: order.status === "delivered" || index < current ? "done" : index === current ? "current" : "upcoming",
-  }));
-}
-
-function OrderDetailContent({ id }: { id: string }) {
+function OrderDetail({ id }: { id: string }) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [cancelOpen, setCancelOpen] = useState(false);
   const [paying, setPaying] = useState(false);
-  const email = useAuthStore((state) => state.user?.email ?? "");
+  const email = useAuthStore((s) => s.user?.email ?? "");
 
-  const { data: order, error, isLoading, refetch } = useQuery<UserOrder, any>({
+  const { data: o, error, isPending, isFetching, refetch } = useQuery<UserOrder, { status?: number; message?: string }>({
     queryKey: ["order", id],
     queryFn: () => getUserOrderById(id),
     // Keep an in-progress order fresh; stop once it can't change any more.
-    refetchInterval: (query) => {
-      const status = query.state.data?.status;
-      return status && !isFinished(status) ? LIVE_REFRESH_MS : false;
-    },
+    refetchInterval: (q) => (q.state.data && !isFinished(q.state.data.status) ? LIVE_REFRESH_MS : false),
     retry: (count, err) => err?.status !== 404 && count < 2,
     staleTime: 0,
   });
+  const zones = useQuery({ queryKey: ["delivery-zones"], queryFn: getDeliveryZones, staleTime: 5 * 60_000 });
+  const store = useQuery({ queryKey: ["store-info"], queryFn: getStoreInfo, staleTime: 10 * 60_000 });
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="flex justify-center py-24 text-gray-400">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -98,281 +56,217 @@ function OrderDetailContent({ id }: { id: string }) {
     );
   }
 
-  if (error?.status === 404 || (!order && error)) {
+  if (error || !o) {
     const notFound = error?.status === 404;
     return (
-      <div className="text-center py-20 space-y-3">
-        <AlertCircle className="h-10 w-10 text-gray-300 mx-auto" />
-        <h1 className="text-xl font-bold text-gray-900">{notFound ? "Order not found" : "We couldn't load this order"}</h1>
-        <p className="text-gray-500">
-          {notFound ? "It may belong to a different account." : "Please check your connection and try again."}
-        </p>
+      <div className="space-y-3 py-20 text-center">
+        <AlertCircle className="mx-auto h-10 w-10 text-gray-300" />
+        <h1 className="font-serif text-2xl font-semibold text-gray-900">{notFound ? "Order not found" : "We couldn't load this order"}</h1>
+        <p className="text-gray-500">{notFound ? "It may belong to a different account." : "Check your connection and try again."}</p>
         <div className="flex justify-center gap-3 pt-2">
           {!notFound && (
-            <Button variant="outline" onClick={() => refetch()}>
-              Try again
-            </Button>
+            <button type="button" onClick={() => refetch()} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium hover:bg-gray-50">Try again</button>
           )}
-          <Button asChild className="bg-green-700 hover:bg-green-800">
-            <Link href="/orders">Back to my orders</Link>
-          </Button>
+          <Link href="/orders" className="rounded-xl bg-[#3f7a55] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2d583d]">Back to my orders</Link>
         </div>
       </div>
     );
   }
 
-  if (!order) return null;
-
-  const status = getStatusInfo(order);
-  const pickup = order.delivery_method === "pickup";
-  const cancelled = order.status === "cancelled";
-  const canCancel = isUnpaid(order.status);
-  const cod = order.payment_method === "cod";
+  const status = getStatusInfo(o);
+  const { title, sub } = orderHeadline(o);
+  const pickup = o.delivery_method === "pickup";
+  const cancelled = o.status === "cancelled";
+  const cod = o.payment_method === "cod";
+  const canCancel = isUnpaid(o.status);
   const canPay = canCancel && !cod;
-  const courier = order.delivery?.courier_name ? order.delivery : null;
-  const showPin = !!order.delivery?.delivery_pin && !isFinished(order.status);
+  const d = o.delivery;
+  const zoneName = zones.data?.find((z) => z.id === d?.delivery_zone)?.name ?? d?.delivery_zone;
+  const count = o.items.reduce((n, i) => n + i.quantity, 0);
 
-  const copyId = async () => {
+  const copyNumber = async () => {
     try {
-      await navigator.clipboard.writeText(order.id);
-      toast.success("Order ID copied.");
+      await navigator.clipboard.writeText(shortOrderId(o.id));
+      toast.success("Order number copied.");
     } catch {
-      toast.error("Couldn't copy the order ID.");
+      toast.error("Couldn't copy the order number.");
     }
   };
 
   return (
     <>
-      <Link href="/orders" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-green-700 mb-4">
+      <Link href="/orders" className="mb-4 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900">
         <ArrowLeft className="h-4 w-4" /> My orders
       </Link>
 
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
-        <div>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl font-bold font-serif text-gray-900">Order {shortOrderId(order.id)}</h1>
-            <Badge className={cn("shadow-none border", status.className)}>{status.label}</Badge>
-          </div>
-          <p className="text-sm text-gray-500 mt-1 flex flex-wrap items-center gap-x-2">
-            Placed {new Date(order.created_at).toLocaleString()}
-            <button type="button" onClick={copyId} className="inline-flex items-center gap-1 text-gray-400 hover:text-gray-700" title={order.id}>
-              <Copy className="h-3.5 w-3.5" /> Copy ID
-            </button>
-          </p>
-        </div>
-
-        {canCancel && (
-          <div className="flex flex-col-reverse sm:flex-row gap-2">
-            <Button variant="outline" className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => setCancelOpen(true)} disabled={paying}>
-              Cancel order
-            </Button>
-            {canPay && (
-              <PayNow
-                order={order}
-                email={email}
-                onBusyChange={setPaying}
-                className="bg-green-700 hover:bg-green-800 text-white min-w-[170px]"
-              />
-            )}
-          </div>
-        )}
-      </div>
-
-      {cancelled && (
-        <div role="status" className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-5">
-          <div className="flex items-start gap-3">
-            <XCircle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
-            <div>
-              <p className="font-semibold text-red-900">
-                {describeCancelledBy(order.cancelled_by)}
-                {order.cancelled_at && (
-                  <span className="font-normal text-red-700"> · {new Date(order.cancelled_at).toLocaleString()}</span>
-                )}
-              </p>
-              <p className="text-red-800 mt-1">Reason: {order.cancellation_reason || "Reason not recorded"}</p>
-              {order.paid_at && (
-                <p className="text-red-900 font-medium mt-3">
-                  We received a payment for this order after it was cancelled. Our team will refund it — please contact us if you don't hear from us.
+      <div className="space-y-5">
+        {/* Status */}
+        <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+          <div className={cn("px-5 py-6 md:px-7", cancelled ? "bg-red-50" : o.status === "delivered" ? "bg-[#F0FFDF]" : "bg-[#f4f7f5]")}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="flex flex-wrap items-center gap-x-2 text-sm text-gray-500">
+                  <span className="font-mono">Order {shortOrderId(o.id)}</span>
+                  <button type="button" onClick={copyNumber} className="inline-flex items-center gap-1 text-gray-400 hover:text-gray-700" aria-label="Copy order number">
+                    <Copy className="h-3.5 w-3.5" />
+                  </button>
+                  <span aria-hidden>·</span> placed {when(o.created_at)}
+                  <span className={cn("ml-1 inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold", status.className)}>{status.label}</span>
                 </p>
-              )}
+                <h1 className={cn("mt-1 font-serif text-2xl font-semibold md:text-3xl", cancelled ? "text-red-800" : "text-[#1a1a1a]")}>{title}</h1>
+                {sub && <p className="mt-1 text-gray-600">{sub}</p>}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {!isFinished(o.status) && (
+                  <button type="button" onClick={() => refetch()} disabled={isFetching} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900">
+                    <RefreshCw className={cn("h-3.5 w-3.5", isFetching && "animate-spin")} /> Refresh
+                  </button>
+                )}
+                {o.status === "delivered" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (buyAgain(o)) router.push("/cart");
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#3f7a55] px-3 py-2 text-sm font-semibold text-white hover:bg-[#2d583d]"
+                  >
+                    <RotateCcw className="h-4 w-4" /> Buy again
+                  </button>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {!cancelled && canPay && order.payment_expires_at && (
-        <PaymentDeadline expiresAt={order.payment_expires_at} onExpired={() => refetch()} />
-      )}
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
-          {!cancelled && (
-            <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <h2 className="font-semibold text-lg mb-5">Progress</h2>
-              <ol className="space-y-6">
-                {buildTimeline(order).map((step, index, all) => {
-                  const Icon = step.icon;
-                  return (
-                    <li key={step.title} className="relative flex gap-4">
-                      {index < all.length - 1 && (
-                        <span
-                          aria-hidden
-                          className={cn("absolute left-[15px] top-9 h-[calc(100%+0.5rem)] w-0.5", step.state === "done" ? "bg-green-600" : "bg-gray-200")}
-                        />
-                      )}
-                      <span
-                        className={cn(
-                          "relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 bg-white",
-                          step.state === "done" && "border-green-600 text-green-600",
-                          step.state === "current" && "border-green-600 text-green-600 ring-4 ring-green-100",
-                          step.state === "upcoming" && "border-gray-200 text-gray-300"
-                        )}
-                      >
-                        <Icon className="h-4 w-4" />
-                      </span>
-                      <div className={cn("pt-0.5", step.state === "upcoming" && "opacity-50")}>
-                        <p className="font-semibold text-gray-900">{step.title}</p>
-                        <p className="text-sm text-gray-500">{step.description}</p>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-            </section>
+          {cancelled ? (
+            <div className="flex items-start gap-3 px-5 py-4 text-sm md:px-7">
+              <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+              <div>
+                <p className="font-medium text-gray-900">
+                  {describeCancelledBy(o.cancelled_by)}
+                  {o.cancelled_at && <span className="font-normal text-gray-500"> · {when(o.cancelled_at)}</span>}
+                </p>
+                {o.paid_at && (
+                  <p className="mt-1 text-gray-600">We received a payment for this order. We&apos;ll refund it to your original payment method; contact us if you don&apos;t hear from us.</p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <OrderProgress order={o} />
           )}
 
-          <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h2 className="font-semibold text-lg mb-4">
-              Items <span className="text-sm font-normal text-gray-500 ml-1">{order.items.reduce((n, i) => n + i.quantity, 0)} total</span>
-            </h2>
-            <ul className="divide-y divide-gray-100">
-              {order.items.map((item) => (
-                <li key={item.id} className="py-4 first:pt-0 last:pb-0 flex items-center gap-4">
-                  <div className="relative h-16 w-16 rounded-xl overflow-hidden bg-gray-100 shrink-0">
-                    <Image src={getThumbnailUrl(item.product?.image_url, 200)} alt={item.product?.name || "Product"} fill unoptimized className="object-cover" />
-                  </div>
+          {canCancel && (
+            <div className="space-y-3 border-t border-gray-100 px-5 py-4 md:px-7">
+              {canPay && o.payment_expires_at && <PaymentDeadline expiresAt={o.payment_expires_at} onExpired={() => refetch()} />}
+              <div className="flex flex-col-reverse gap-2 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => setCancelOpen(true)}
+                  disabled={paying}
+                  className="h-10 rounded-lg border border-red-200 px-4 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                >
+                  Cancel order
+                </button>
+                {canPay && <PayNow order={o} email={email} onBusyChange={setPaying} className="min-w-[170px] bg-[#22c55e] text-white hover:bg-[#16a34a]" />}
+              </div>
+            </div>
+          )}
+        </section>
+
+        <PinAndCourier order={o} />
+
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+          {/* Items */}
+          <section className="rounded-2xl border border-gray-200 bg-white p-5 md:p-6">
+            <h2 className="font-semibold text-gray-900">{count} item{count === 1 ? "" : "s"}</h2>
+            <ul className="mt-2 divide-y divide-gray-100">
+              {o.items.map((item) => (
+                <li key={item.id} className="flex items-center gap-4 py-3">
+                  <Link href={item.product?.slug ? `/products/${item.product.slug}` : "#"} className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-100">
+                    <Image src={getThumbnailUrl(item.product?.image_url, 112)} alt={item.product?.name ?? ""} fill unoptimized className="object-cover" />
+                  </Link>
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-gray-900">{item.product?.name ?? "Item no longer available"}</p>
-                    <p className="text-sm text-gray-500">
-                      {item.selected_option && <span className="mr-2">{item.selected_option}</span>}Qty {item.quantity}
+                    <p className="truncate font-medium text-gray-900">{item.product?.name ?? "Item no longer sold"}</p>
+                    <p className="text-xs text-gray-500">
+                      {item.selected_option ? `${item.selected_option} · ` : ""}
+                      {naira(item.price_at_time)} each · ×{item.quantity}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900">₦{(item.price_at_time * item.quantity).toLocaleString()}</p>
-                    <p className="text-xs text-gray-500">₦{item.price_at_time.toLocaleString()} each</p>
-                  </div>
+                  <span className="font-semibold tabular-nums text-gray-900">{naira(item.price_at_time * item.quantity)}</span>
                 </li>
               ))}
             </ul>
-          </section>
-        </div>
-
-        <div className="space-y-6">
-          {courier && !cancelled && (
-            <section className="bg-blue-50 border border-blue-100 rounded-2xl p-5">
-              <div className="flex items-start gap-3">
-                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                  <Bike className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Your delivery contact</p>
-                  <p className="font-bold text-gray-900 mt-0.5">
-                    {courier.courier_name}
-                    {courier.courier_service && (
-                      <span className="ml-2 text-xs font-medium text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full uppercase">{courier.courier_service}</span>
-                    )}
-                  </p>
-                  {courier.courier_phone && (
-                    <a href={`tel:${courier.courier_phone}`} className="mt-1 inline-flex items-center gap-1.5 text-sm text-blue-700 font-medium hover:underline">
-                      <Phone className="h-3.5 w-3.5" /> {courier.courier_phone}
-                    </a>
-                  )}
-                </div>
-              </div>
-              {showPin && (
-                <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
-                  <KeyRound className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-xs text-gray-600">Your delivery PIN</p>
-                    <p className="text-2xl font-bold tracking-widest text-amber-700">{order.delivery!.delivery_pin}</p>
-                    <p className="text-xs text-gray-500 mt-1">Give this code to the courier when your order arrives — it's how we confirm you received it.</p>
-                  </div>
-                </div>
+            <dl className="mt-2 space-y-1.5 border-t border-gray-100 pt-3 text-sm">
+              <div className="flex justify-between"><dt className="text-gray-500">Items</dt><dd className="tabular-nums">{naira(o.subtotal)}</dd></div>
+              {!pickup && (
+                <div className="flex justify-between"><dt className="text-gray-500">Delivery (cash to courier)</dt><dd className="tabular-nums">est. {naira(o.delivery_fee)}</dd></div>
               )}
-            </section>
-          )}
-
-          <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h2 className="font-semibold text-lg mb-4">{pickup ? "Pickup" : "Delivery"}</h2>
-            <div className="flex items-start gap-3 text-sm">
-              {pickup ? <Store className="h-4 w-4 mt-0.5 text-gray-400 shrink-0" /> : <MapPin className="h-4 w-4 mt-0.5 text-gray-400 shrink-0" />}
-              <div className="text-gray-700">
-                {pickup ? (
-                  "You'll collect this order from our store."
-                ) : order.delivery ? (
-                  <>
-                    <p>
-                      {order.delivery.address}
-                      {order.delivery.apartment && `, ${order.delivery.apartment}`}
-                    </p>
-                    <p className="text-gray-500">
-                      {[order.delivery.city, order.delivery.state].filter(Boolean).join(", ")}
-                    </p>
-                    {order.delivery.landmark && <p className="text-gray-500">Landmark: {order.delivery.landmark}</p>}
-                    {order.delivery.instructions && <p className="text-gray-500 mt-1">“{order.delivery.instructions}”</p>}
-                  </>
-                ) : (
-                  "Delivery details unavailable."
-                )}
+              <div className="flex justify-between pt-1.5 text-base font-semibold">
+                <dt>{cod ? "To pay in cash" : o.paid_at ? "Paid online" : cancelled ? "Total" : "To pay online"}</dt>
+                <dd className="tabular-nums">{naira(o.total_amount)}</dd>
               </div>
-            </div>
-          </section>
-
-          <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h2 className="font-semibold text-lg mb-4">Payment</h2>
-            <dl className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-gray-500">Subtotal</dt>
-                <dd className="text-gray-900">₦{order.subtotal.toLocaleString()}</dd>
-              </div>
-              <div className="flex justify-between font-bold text-base pt-2 border-t border-gray-100">
-                <dt>Total</dt>
-                <dd className="text-green-700">₦{order.total_amount.toLocaleString()}</dd>
-              </div>
-              {!pickup && order.delivery_fee > 0 && (
-                <p className="text-xs text-gray-500 pt-1">
-                  Delivery fee (estimate) ₦{order.delivery_fee.toLocaleString()} is paid to the courier in cash — it isn't part of the total above.
-                </p>
-              )}
-              <div className="flex justify-between pt-3 border-t border-gray-100">
-                <dt className="text-gray-500">Method</dt>
-                <dd className="text-gray-900">{cod ? "Cash on delivery" : (order.payment_method ?? "Online").replace(/^./, (c) => c.toUpperCase())}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-gray-500">Status</dt>
-                <dd className="text-gray-900">
-                  {order.paid_at
-                    ? `Paid ${new Date(order.paid_at).toLocaleDateString()}`
+              <p className="pt-1 text-xs text-gray-500">
+                {cod
+                  ? "Cash on delivery"
+                  : o.paid_at
+                    ? `Paid ${when(o.paid_at)} with Paystack`
                     : cancelled
                       ? "Not paid"
-                      : cod
-                        ? "Pay on delivery"
-                        : isUnpaid(order.status)
-                          ? "Awaiting payment"
-                          : "Paid"}
-                </dd>
-              </div>
+                      : "Awaiting payment"}
+              </p>
             </dl>
           </section>
 
-          {!cancelled && !canCancel && order.status !== "delivered" && (
-            <p className="text-sm text-gray-500 px-1 flex items-start gap-2">
-              <Info className="h-4 w-4 mt-0.5 shrink-0" />
-              {order.status === "in_transit"
-                ? "This order is already on its way. If something's wrong, please contact us."
-                : "We've started on this order. To cancel it, please contact us."}
-            </p>
-          )}
+          <div className="space-y-5">
+            {/* Where / when */}
+            <section className="rounded-2xl border border-gray-200 bg-white p-5">
+              <h2 className="flex items-center gap-2 font-semibold text-gray-900">
+                {pickup ? <Store className="h-4 w-4 text-[#3f7a55]" /> : <MapPin className="h-4 w-4 text-[#3f7a55]" />}
+                {pickup ? "Pickup" : "Delivery"}
+              </h2>
+              {pickup ? (
+                <div className="mt-3 space-y-1 text-sm text-gray-600">
+                  <p className="font-medium text-gray-900">{store.data?.store_name ?? "Our shop"}</p>
+                  {store.data?.pickup_address && <p>{store.data.pickup_address}</p>}
+                  {store.data?.pickup_instructions && <p className="whitespace-pre-line text-gray-500">{store.data.pickup_instructions}</p>}
+                  <p className="pt-1 text-gray-500">Bring your order number: <span className="font-mono">{shortOrderId(o.id)}</span></p>
+                </div>
+              ) : d ? (
+                <div className="mt-3 space-y-1 text-sm text-gray-600">
+                  {d.time_slot && (
+                    <p className="flex items-center gap-2 font-medium text-gray-900"><Clock className="h-4 w-4 text-gray-400" /> {longDay(d.delivery_date)} · {d.time_slot}</p>
+                  )}
+                  <p>{zoneName}</p>
+                  <p>{d.address}{d.apartment && `, ${d.apartment}`}</p>
+                  {d.landmark && <p className="text-gray-500">Near {d.landmark}</p>}
+                  {d.instructions && <p className="mt-2 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600">“{d.instructions}”</p>}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-gray-500">Delivery details unavailable.</p>
+              )}
+            </section>
+
+            {/* Help */}
+            <section className="rounded-2xl border border-gray-200 bg-white p-5 text-sm">
+              <h2 className="font-semibold text-gray-900">Need help?</h2>
+              {!cancelled && !canCancel && o.status !== "delivered" && (
+                <p className="mt-2 flex items-start gap-2 text-gray-600">
+                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+                  {o.status === "in_transit" ? "It's already on its way. If something's wrong, contact us." : "We've started on this order. To change or cancel it, contact us."}
+                </p>
+              )}
+              <div className="mt-2 space-y-1.5 text-gray-600">
+                {store.data?.contact_phone && (
+                  <a href={`tel:${store.data.contact_phone}`} className="flex items-center gap-2 hover:text-gray-900"><Phone className="h-4 w-4 text-[#3f7a55]" /> {store.data.contact_phone}</a>
+                )}
+                {store.data?.contact_email && (
+                  <a href={`mailto:${store.data.contact_email}?subject=${encodeURIComponent(`Order ${shortOrderId(o.id)}`)}`} className="flex items-center gap-2 hover:text-gray-900">
+                    <Mail className="h-4 w-4 text-[#3f7a55]" /> {store.data.contact_email}
+                  </a>
+                )}
+                {!store.data?.contact_phone && !store.data?.contact_email && <p className="text-gray-500">Mention your order number {shortOrderId(o.id)} when you get in touch.</p>}
+              </div>
+            </section>
+          </div>
         </div>
       </div>
 
@@ -382,8 +276,10 @@ function OrderDetailContent({ id }: { id: string }) {
         reasons={CUSTOMER_CANCEL_REASONS}
         description="Please tell us why. Once cancelled, this can't be undone."
         onConfirm={async (reason) => {
-          const updated = await cancelUserOrder(order.id, reason);
+          const updated = await cancelUserOrder(o.id, reason);
           queryClient.setQueryData(["order", id], updated);
+          queryClient.invalidateQueries({ queryKey: ["my-orders"] });
+          queryClient.invalidateQueries({ queryKey: ["my-orders-summary"] });
           toast.success("Your order has been cancelled.");
         }}
       />
@@ -393,32 +289,25 @@ function OrderDetailContent({ id }: { id: string }) {
 
 export default function OrderDetailPage() {
   const params = useParams<{ id: string }>();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const [isMounted, setIsMounted] = useState(false);
+  const router = useRouter();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const ready = useSyncExternalStore(
+    (onChange) => useAuthStore.persist.onFinishHydration(onChange),
+    () => useAuthStore.persist.hasHydrated(),
+    () => false,
+  );
 
-  // Avoid flashing the sign-in prompt before the persisted session is read.
-  useEffect(() => setIsMounted(true), []);
+  // Signed out: guests (and anyone signed out) can look the order up by number + email.
+  useEffect(() => {
+    if (ready && !isAuthenticated) router.replace(`/order-tracking?id=${encodeURIComponent(params.id)}`);
+  }, [ready, isAuthenticated, params.id, router]);
 
   return (
-    <div className="min-h-screen bg-gray-50/50 flex flex-col">
+    <div className="flex min-h-screen flex-col bg-[#f7f8f7]">
       <Header />
-      <main className="flex-1 container mx-auto px-4 py-8 lg:py-10 max-w-5xl">
-        {isMounted && !isAuthenticated ? (
-          <div className="text-center py-20 space-y-4">
-            <h1 className="text-2xl font-bold text-gray-900">Please sign in</h1>
-            <p className="text-gray-500">Sign in to view this order.</p>
-            <SignInModal>
-              <Button className="bg-green-700 hover:bg-green-700/90">Sign In</Button>
-            </SignInModal>
-            <p className="text-sm text-gray-500">
-              Ordered as a guest?{" "}
-              <Link href={`/order-tracking?id=${params.id}`} className="text-green-700 font-semibold hover:underline">
-                Track your order
-              </Link>
-            </p>
-          </div>
-        ) : isAuthenticated && params.id ? (
-          <OrderDetailContent id={params.id} />
+      <main className="container mx-auto w-full max-w-5xl flex-1 px-4 py-6 md:py-8">
+        {ready && isAuthenticated && params.id ? (
+          <OrderDetail id={params.id} />
         ) : (
           <div className="flex justify-center py-24 text-gray-400">
             <Loader2 className="h-8 w-8 animate-spin" />

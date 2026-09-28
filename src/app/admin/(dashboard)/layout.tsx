@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { useAdminAuthStore } from "@/core/store/useAdminAuthStore";
 import { restoreSession } from "@/core/api/client";
+import { adminLandingPath, permissionForPath } from "@/core/constants/routes";
+import { hasPermission } from "@/core/store/useAdminCan";
 
 import { ToastContainer } from "react-toastify";
-import { Loader2 } from "lucide-react";
+import { Loader2, ShieldAlert } from "lucide-react";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function AdminLayout({
@@ -17,7 +20,9 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const isAuthenticated = useAdminAuthStore((state) => state.isAuthenticated);
+  const permissions = useAdminAuthStore((state) => state.user?.permissions);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
@@ -47,6 +52,18 @@ export default function AdminLayout({
     };
   }, [isAuthenticated, router]);
 
+  const needed = permissionForPath(pathname);
+  const allowed = hasPermission(permissions, needed);
+  const landing = adminLandingPath(permissions);
+
+  // The dashboard is where sign-in sends everyone; staff without it go to
+  // their own first section instead of seeing "not allowed".
+  useEffect(() => {
+    if (!checkingAuth && !allowed && pathname === "/admin/dashboard" && landing !== pathname) {
+      router.replace(landing);
+    }
+  }, [checkingAuth, allowed, pathname, landing, router]);
+
   if (checkingAuth) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-gray-50 uppercase tracking-widest text-sm font-medium text-gray-400">
@@ -69,7 +86,16 @@ export default function AdminLayout({
         
         <main className="flex-1 p-4 lg:p-8">
           <div className="max-w-7xl mx-auto">
-            {children}
+            {allowed ? children : (
+              <div className="mx-auto mt-16 max-w-md rounded-2xl border border-gray-200 bg-white p-8 text-center">
+                <ShieldAlert className="mx-auto h-10 w-10 text-amber-500" />
+                <h1 className="mt-4 text-lg font-semibold text-gray-900">Your role can&apos;t open this page</h1>
+                <p className="mt-1 text-sm text-gray-500">Ask the store owner if you need access.</p>
+                <Link href={landing} className="mt-6 inline-block text-sm font-semibold text-[#3f7a55] hover:underline">
+                  Go to your workspace
+                </Link>
+              </div>
+            )}
           </div>
         </main>
       </div>

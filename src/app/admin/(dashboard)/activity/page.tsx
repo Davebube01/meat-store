@@ -5,7 +5,7 @@ import Link from "next/link";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import {
-  AlertCircle, Boxes, FileDown, Loader2, LogIn, Search, Settings, ShoppingBag, ShoppingCart, Store, Tags, type LucideIcon,
+  AlertCircle, Boxes, FileDown, Loader2, LogIn, Search, Settings, ShoppingBag, ShoppingCart, Store, Tags, UserCog, type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,11 +21,12 @@ const TYPES: { key: ActivityEntityType | "all"; label: string }[] = [
   { key: "sale", label: "Counter sales" },
   { key: "category", label: "Categories" },
   { key: "settings", label: "Settings" },
+  { key: "staff", label: "Staff" },
   { key: "admin", label: "Sign-ins & exports" },
 ];
 
 const ICONS: Record<string, LucideIcon> = {
-  product: ShoppingBag, order: ShoppingCart, sale: Store, category: Tags, settings: Settings, admin: LogIn,
+  product: ShoppingBag, order: ShoppingCart, sale: Store, category: Tags, settings: Settings, admin: LogIn, staff: UserCog,
 };
 
 const FIELD_NAMES: Record<string, string> = {
@@ -33,8 +34,10 @@ const FIELD_NAMES: Record<string, string> = {
   image_url: "Image", stock: "Stock", status: "Status",
 };
 
-const label = (field: string) => {
-  const name = FIELD_NAMES[field] ?? field.replace(/_/g, " ");
+const label = (field: string, entityType: string) => {
+  // Only products are "visible"; for staff accounts is_active means active.
+  const name = (entityType === "product" ? FIELD_NAMES[field] : field === "is_active" ? "Active" : FIELD_NAMES[field])
+    ?? field.replace(/_/g, " ");
   return name.charAt(0).toUpperCase() + name.slice(1);
 };
 
@@ -79,7 +82,7 @@ function Entry({ entry }: { entry: ActivityEntry }) {
           <dl className="mt-2 grid gap-1 rounded-lg bg-gray-50 px-3 py-2 text-xs sm:grid-cols-[auto_1fr] sm:gap-x-4">
             {changes.map(([field, change]) => (
               <div key={field} className="contents">
-                <dt className="font-medium text-gray-500">{label(field)}</dt>
+                <dt className="font-medium text-gray-500">{label(field, entry.entity_type)}</dt>
                 <dd className="text-gray-700">
                   <span className="text-gray-400 line-through">{show(change.from)}</span> → {show(change.to)}
                 </dd>

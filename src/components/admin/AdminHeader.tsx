@@ -3,6 +3,7 @@
 import { useAdminAuthStore } from "../../core/store/useAdminAuthStore";
 import { Menu, User, Search } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 interface AdminHeaderProps {
@@ -61,11 +62,11 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
               <p className="text-sm font-bold text-gray-900 leading-none mb-1">
                 {user?.full_name || user?.email || "Admin User"}
               </p>
-              <p className="text-[10px] uppercase font-bold text-green-600 tracking-wider">Super Administrator</p>
+              <p className="text-[10px] uppercase font-bold text-green-600 tracking-wider">{user?.role ?? "owner"}</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center border border-gray-200">
+            <Link href="/admin/account" aria-label="Your account" className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center border border-gray-200 hover:border-green-300">
               <User className="w-5 h-5 text-gray-500" />
-            </div>
+            </Link>
           </div>
         </div>
       </div>

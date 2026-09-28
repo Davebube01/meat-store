@@ -1,614 +1,353 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import {
-  Search,
-  CheckCircle2,
-  Circle,
-  Clock,
-  Package,
-  Truck,
-  ChefHat,
-  ShoppingBag,
-  ChevronRight,
-  Store,
-  Phone,
-  Bike,
-  KeyRound,
-  Loader2,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
-import { cn } from "@/lib/utils";
+import { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { getUserOrderById, getUserOrders, getPublicOrderTrack, UserOrder, UserOrderItem } from "@/core/api/user/orders";
-import { API_BASE_URL } from "@/core/api/client";
-import { useAuthStore } from "@/core/store/useAuthStore";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Ban, Clock, Loader2, Mail, MapPin, Phone, RefreshCw, Search, Store, Truck,
+} from "lucide-react";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { PayNow } from "@/components/orders/PayNow";
 import { PaymentDeadline } from "@/components/orders/PaymentDeadline";
-import { isUnpaid } from "@/lib/orderStatus";
+import { OrderProgress, PinAndCourier } from "@/components/orders/OrderStatusParts";
+import { longDay, orderHeadline } from "@/components/orders/orderStatusText";
+import { getPublicOrderTrack, type UserOrder } from "@/core/api/user/orders";
+import { getDeliveryZones } from "@/core/api/user/delivery";
+import { getStoreInfo } from "@/core/api/user/store";
+import { useAuthStore } from "@/core/store/useAuthStore";
+import { isFinished, isUnpaid, shortOrderId } from "@/lib/orderStatus";
+import { getThumbnailUrl } from "@/lib/imageUrl";
+import { cn } from "@/lib/utils";
 
-export default function OrderTrackingPage() {
-  const [searchId, setSearchId] = useState("");
-  const [searchEmail, setSearchEmail] = useState("");
+const RECENT_KEY = "tracked_orders";
+const naira = (n: number) => `₦${Math.round(n).toLocaleString("en-NG")}`;
+const when = (iso: string) =>
+  new Date(iso).toLocaleString("en-NG", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Africa/Lagos" });
 
-  const [order, setOrder] = useState<UserOrder | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorText, setErrorText] = useState("");
+type Recent = { id: string; email: string };
 
+function readRecent(): Recent[] {
+  try {
+    const raw = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]");
+    return (raw as (string | Recent)[])
+      .map((r) => (typeof r === "string" ? { id: r, email: "" } : r))
+      .filter((r) => r.id && r.email);
+  } catch {
+    return [];
+  }
+}
+
+function remember(entry: Recent) {
+  try {
+    const next = [entry, ...readRecent().filter((r) => r.id !== entry.id)].slice(0, 5);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+  } catch {
+    // storage unavailable: nothing to remember
+  }
+}
+
+/* ------------------------------------------------------------------ page */
+
+function Tracking() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
-  const [redirecting, setRedirecting] = useState(false);
-  const [userOrders, setUserOrders] = useState<UserOrder[]>([]);
-  const [recentGuestTrackings, setRecentGuestTrackings] = useState<{id: string, email?: string}[]>([]);
-  const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const params = useSearchParams();
+  const [lookup, setLookup] = useState<Recent | null>(() => {
+    const id = params.get("id");
+    const email = params.get("email");
+    if (id && email) return { id, email };
+    return null;
+  });
+  // The full ID when we have it (links, recent list): it works with every version of the lookup.
+  const [number, setNumber] = useState(() => params.get("id") ?? "");
+  const [email, setEmail] = useState(() => params.get("email") ?? "");
+  const [recent, setRecent] = useState<Recent[]>(() => (typeof window === "undefined" ? [] : readRecent()));
 
-  // Signed-in customers never need to look an order up by ID + email: they
-  // go straight to their own order (or their order list). This page is for guests.
-  // Reads the live store, since the render-time value can still be the
-  // signed-out default on a hard load.
+  // Signed-in customers have their own order pages; this lookup is for guests.
   useEffect(() => {
     if (useAuthStore.getState().isAuthenticated) {
-      const id = new URLSearchParams(window.location.search).get("id");
-      setRedirecting(true);
+      const id = params.get("id");
       router.replace(id ? `/orders/${encodeURIComponent(id)}` : "/orders");
     }
-  }, [router]);
+  }, [params, router]);
 
+  // Links from checkout carry the email: use it, then drop it from the address bar.
   useEffect(() => {
-    if (useAuthStore.getState().isAuthenticated) return;
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const idParam = urlParams.get("id");
-    const emailParam = urlParams.get("email");
-    
-    if (idParam && !initialLoadDone) {
-      setSearchId(idParam);
-      if (emailParam) {
-        setSearchEmail(emailParam);
-      }
-      // For initial generic URL tracks, try to fetch if authenticated or it will gracefully fail demanding email
-      fetchTracking(idParam, emailParam || undefined);
-      setInitialLoadDone(true);
+    if (params.get("email")) {
+      const id = params.get("id");
+      router.replace(id ? `/order-tracking?id=${encodeURIComponent(id)}` : "/order-tracking", { scroll: false });
     }
+  }, [params, router]);
 
-    try {
-      const cached = localStorage.getItem("tracked_orders");
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        const normalized = parsed.map((item: any) => 
-          typeof item === "string" ? { id: item, email: "" } : item
-        );
-        setRecentGuestTrackings(normalized);
-      }
-    } catch(e) {}
+  const track = useQuery({
+    queryKey: ["track-order", lookup?.id, lookup?.email],
+    queryFn: async () => {
+      const order = await getPublicOrderTrack(lookup!.id, lookup!.email);
+      remember({ id: order.id, email: lookup!.email });
+      setRecent(readRecent());
+      return order;
+    },
+    enabled: !!lookup,
+    retry: false,
+    // Keep an active order current while the page is open.
+    refetchInterval: (q) => (q.state.data && !isFinished(q.state.data.status) ? 60_000 : false),
+  });
+  const zones = useQuery({ queryKey: ["delivery-zones"], queryFn: getDeliveryZones, staleTime: 5 * 60_000 });
+  const store = useQuery({ queryKey: ["store-info"], queryFn: getStoreInfo, staleTime: 10 * 60_000 });
 
-    if (isAuthenticated) {
-      getUserOrders().then((data) => {
-        setUserOrders(data);
-        if (!idParam && !order && data.length > 0) {
-           const mostRecentActive = data.find(o => !["delivered", "cancelled"].includes(o.status)) || data[0];
-           setSearchId(mostRecentActive.id);
-           fetchTracking(mostRecentActive.id);
-        }
-      }).catch(console.error);
-    }
-  }, [isAuthenticated]);
+  const o = track.data;
+  const notFound = track.isError && (track.error as { status?: number }).status === 404;
 
-  const getFullImageUrl = (url: string | undefined) => {
-    if (!url) return "/placeholder.jpg";
-    if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:")) return url;
-    return `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
-  };
-
-  const fetchTracking = async (id: string, email?: string) => {
-    if (!id) return;
-    
-    if (!isAuthenticated && !email && searchEmail === "") {
-        setErrorText("Email Address is required to track an order as a guest.");
-        setOrder(null);
-        return;
-    }
-
-    setIsLoading(true);
-    setErrorText("");
-    try {
-      const fetchedOrder = isAuthenticated 
-          ? await getUserOrderById(id)
-          : await getPublicOrderTrack(id, email || searchEmail);
-          
-      setOrder(fetchedOrder);
-
-      try {
-        const cached = localStorage.getItem("tracked_orders");
-        let trackings: any[] = cached ? JSON.parse(cached) : [];
-        const normalized = trackings.map((item: any) => 
-          typeof item === "string" ? { id: item, email: "" } : item
-        );
-        
-        // Remove if already exists
-        const filtered = normalized.filter((t: any) => t.id !== id);
-        
-        // Add to front
-        const newTrackings = [{ id, email: email || searchEmail }, ...filtered].slice(0, 5); 
-        localStorage.setItem("tracked_orders", JSON.stringify(newTrackings));
-        setRecentGuestTrackings(newTrackings);
-      } catch(e) {}
-
-    } catch (err: any) {
-      // The err object here will be an instance of ApiError (e.g., NotFoundError)
-      // due to the handleApiResponseError in fetchClient.
-      const { ApiError, NotFoundError } = await import("@/core/errors/apiErrors");
-      
-      if (err instanceof NotFoundError) {
-        setErrorText("We couldn't find an order with that ID and Email combination. Please double-check your details.");
-      } else if (err instanceof ApiError) {
-        setErrorText(err.message);
-      } else {
-        setErrorText("An unexpected error occurred. Please try again later.");
-      }
-      setOrder(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleTrackOrder = (e: React.FormEvent) => {
+  const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchTracking(searchId, searchEmail);
+    if (!number.trim() || !email.trim()) return;
+    setLookup({ id: number.trim(), email: email.trim() });
   };
-
-  const generateTimeline = (status: string) => {
-    const isCancelled = status === "cancelled";
-
-    if (isCancelled) {
-      return [
-        {
-          title: "Order placed",
-          date: order?.created_at ? new Date(order.created_at).toLocaleDateString() : "",
-          description: "Your order was received.",
-          status: "completed",
-          icon: CheckCircle2,
-        },
-        {
-          title: "Cancelled",
-          date: order?.cancelled_at ? new Date(order.cancelled_at).toLocaleDateString() : "",
-          description: `Reason: ${order?.cancellation_reason || "Reason not recorded"}`,
-          status: "cancelled",
-          icon: Circle,
-        }
-      ];
-    }
-
-    // Maps each backend status to which timeline step should be "current"
-    // Backend statuses: pending | awaiting_verification | paid | processing | in_transit | delivered
-    const statusToStep: Record<string, number> = {
-      pending:                0,  // Order placed (waiting for payment)
-      awaiting_verification:  0,  // Still at order-placed step
-      paid:                   0,  // Payment received, not yet processing
-      processing:             1,  // Kitchen prepping
-      in_transit:             2,  // Out for delivery
-      delivered:              3,  // Delivered
-    };
-
-    const currentStepIndex = statusToStep[status] ?? 0;
-
-    const timelineTemplate = [
-      {
-        id: "pending",
-        title: "Order placed",
-        description: "Payment confirmed and ticket generated.",
-        icon: CheckCircle2,
-      },
-      {
-        id: "processing",
-        title: "Order currently being prepared.",
-        description: "Our team is working on your order.",
-        icon: ShoppingBag,
-      },
-      {
-        id: "in_transit",
-        title: order?.delivery_method === "pickup" ? "Ready for Pickup" : "Out for delivery",
-        description: order?.delivery_method === "pickup" ? "Your order is ready for pickup at our store." : "Rider is bringing it to you.",
-        icon: order?.delivery_method === "pickup" ? Store : Truck,
-      },
-      {
-        id: "delivered",
-        title: order?.delivery_method === "pickup" ? "Picked Up" : "Delivered",
-        description: order?.delivery_method === "pickup" ? "Your order has been picked up." : "Your order has been delivered.",
-        icon: Package,
-      },
-    ];
-
-    return timelineTemplate.map((step, index) => {
-      let stepStatus: string;
-      if (index < currentStepIndex) {
-        stepStatus = "completed";
-      } else if (index === currentStepIndex) {
-        stepStatus = "current";
-      } else {
-        stepStatus = "pending";
-      }
-
-      return {
-        ...step,
-        date: stepStatus === "completed" || stepStatus === "current"
-          ? new Date(order?.created_at || "").toLocaleDateString()
-          : "Pending",
-        status: stepStatus,
-      };
-    });
-  };
-
-  if (redirecting) {
-    return (
-      <div className="min-h-screen flex flex-col bg-gray-50/50">
-        <Header />
-        <div className="flex-1 flex items-center justify-center text-gray-400">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50/50">
-      <Header />
-
-      {/* Hero / Header Section */}
-      <div className="bg-white border-b py-12 px-4 text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-50 text-green-700 text-xs font-medium mb-4">
-          <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-          Live order tracking
+    <main className="flex-1 bg-[#f7f8f7]">
+      <div className="border-b border-gray-200 bg-white">
+        <div className="container mx-auto px-4 py-10 md:py-12">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#3f7a55]">Order tracking</p>
+          <h1 className="mt-2 font-serif text-3xl font-semibold tracking-tight text-[#1a1a1a] md:text-4xl">Where&apos;s my order?</h1>
+          <p className="mt-2 max-w-xl text-gray-600">
+            Enter your order number and the email you used at checkout. Signed in?{" "}
+            <Link href="/orders" className="font-semibold text-[#3f7a55] hover:underline">See your orders</Link>.
+          </p>
         </div>
-        <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-          Track your TerraEats delivery in real time
-        </h1>
-        <p className="text-gray-500 max-w-lg mx-auto">
-          Enter your order ID and email to view the latest status, estimated
-          arrival window, and delivery contact details.
-        </p>
       </div>
 
-      <main className="flex-1 container mx-auto px-4 py-8 lg:py-12">
-        <div className="grid lg:grid-cols-12 gap-8 lg:gap-12">
-          {/* Left Column: Search Form */}
-          <div className="lg:col-span-4 space-y-8 lg:sticky lg:top-24 self-start">
-            <Card className="border-none shadow-sm">
-              <CardHeader>
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                  FIND YOUR ORDER
-                </span>
-                <CardTitle className="text-xl">Enter your details</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleTrackOrder} className="space-y-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="orderId">Order ID *</Label>
-                    <Input
-                      id="orderId"
-                      placeholder="e.g. #ORD-12345"
-                      value={searchId}
-                      onChange={(e) => setSearchId(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="email">Email Address {!isAuthenticated && <span className="text-red-500">*</span>}</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="you@terraeats.com"
-                      value={searchEmail}
-                      onChange={(e) => setSearchEmail(e.target.value)}
-                      required={!isAuthenticated}
-                    />
-                    {!isAuthenticated && <p className="text-xs text-gray-500">Required for guest tracking authentication.</p>}
-                  </div>
-                  <Button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full bg-green-800 hover:bg-green-900 text-white"
-                  >
-                    {isLoading ? "Searching..." : "Track order"}
-                    <Search className="w-4 h-4 ml-2" />
-                  </Button>
-                  
-                  {errorText && <p className="text-red-500 text-sm mt-2">{errorText}</p>}
-                </form>
+      <div className="container mx-auto grid grid-cols-1 gap-6 px-4 py-8 lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start">
+        {/* Lookup */}
+        <div className="space-y-4 lg:sticky lg:top-24">
+          <form onSubmit={submit} className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5">
+            <div className="space-y-2">
+              <Label htmlFor="order-number">Order number</Label>
+              <Input id="order-number" value={number} onChange={(e) => setNumber(e.target.value)} placeholder="#1A2B3C4D" autoComplete="off" className="font-mono uppercase" />
+              <p className="text-xs text-gray-500">It&apos;s in your confirmation email and on the order page.</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="track-email">Email</Label>
+              <Input id="track-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+            </div>
+            <button
+              type="submit"
+              disabled={!number.trim() || !email.trim() || track.isFetching}
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#3f7a55] font-semibold text-white hover:bg-[#2d583d] disabled:bg-gray-300"
+            >
+              {track.isFetching && !o ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Track order
+            </button>
+            {track.isError && (
+              <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+                {notFound
+                  ? "We couldn't find an order with that number and email. Check both and try again."
+                  : (track.error as { status?: number }).status === 429
+                    ? "Too many tries. Please wait a minute and try again."
+                    : "Something went wrong. Please try again."}
+              </p>
+            )}
+          </form>
 
-                <div className="mt-8 bg-gray-50 rounded-lg p-4 text-sm text-gray-600">
-                  <h4 className="font-semibold mb-1">Need help?</h4>
-                  <p>
-                    Chat with support 24/7 or email{" "}
-                    <strong>support@terraeats.com</strong>
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Orders List */}
-            {(isAuthenticated && userOrders.length > 0) || (!isAuthenticated && recentGuestTrackings.length > 0) ? (
-              <Card className="border-none shadow-sm">
-                <CardHeader>
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                    {isAuthenticated ? "YOUR RECENT ORDERS" : "RECENTLY TRACKED"}
-                  </span>
-                  <CardTitle className="text-xl">Quick Access</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {isAuthenticated ? (
-                    userOrders.slice(0, 2).map(uOrder => (
-                      <div key={uOrder.id} className={cn("flex items-center justify-between p-3 border rounded-lg transition cursor-pointer", order?.id === uOrder.id ? "border-green-500 bg-green-50" : "hover:border-green-300 hover:bg-green-50")} onClick={() => { setSearchId(uOrder.id); fetchTracking(uOrder.id); }}>
-                        <div>
-                          <p className="font-bold text-gray-900">{uOrder.id}</p>
-                          <p className="text-xs text-gray-500">{new Date(uOrder.created_at).toLocaleDateString()} • ₦{uOrder.total_amount.toLocaleString()}</p>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-gray-400" />
-                      </div>
-                    ))
-                  ) : (
-                    recentGuestTrackings.map(t => (
-                      <div key={t.id} className={cn("flex items-center justify-between p-3 border rounded-lg transition cursor-pointer", order?.id === t.id ? "border-green-500 bg-green-50" : "hover:border-green-300 hover:bg-green-50")} onClick={() => { setSearchId(t.id); if (t.email) setSearchEmail(t.email); fetchTracking(t.id, t.email); }}>
-                        <div className="flex items-center gap-2">
-                           <ShoppingBag className="w-4 h-4 text-gray-500" />
-                           <p className="font-bold text-gray-900">{t.id}</p>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-gray-400" />
-                      </div>
-                    ))
-                  )}
-                  {isAuthenticated && userOrders.length > 5 && (
-                    <div className="pt-2 border-t mt-2">
-                        <Button variant="link" asChild className="w-full text-green-700 h-8">
-                            <Link href="/orders">
-                            View all past orders
-                            </Link>
-                        </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ) : null}
-
-          </div>
-
-          {/* Right Column: Order Details */}
-          {order && (
-            <div className="lg:col-span-8 space-y-8">
-              <Card className="border-none shadow-sm overflow-hidden">
-                <div className="p-6 lg:p-8">
-                  {/* Order Header */}
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 pb-8 border-b">
-                    <div>
-                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">
-                        ACTIVE ORDER
-                      </span>
-                      <h2 className="text-3xl font-bold text-gray-900 mb-1">
-                        {order.id}
-                      </h2>
-                      <p className="text-sm text-gray-500">
-                        Placed {new Date(order.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-500 mb-1">Total Amount</p>
-                      <p className="text-2xl font-bold text-green-700">
-                        ₦{order.total_amount.toLocaleString()}
-                      </p>
-                      <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        {order.payment_method || "ONLINE"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Unpaid online order: let a guest finish paying instead of being stuck */}
-                  {isUnpaid(order.status) && order.payment_method !== "cod" && (
-                    <div className="mb-8">
-                      {order.payment_expires_at && (
-                        <PaymentDeadline
-                          expiresAt={order.payment_expires_at}
-                          onExpired={() => fetchTracking(order.id, searchEmail || order.guest_info?.email)}
-                        />
+          {recent.length > 0 && (
+            <div className="rounded-2xl border border-gray-200 bg-white p-5">
+              <p className="mb-3 text-sm font-semibold text-gray-900">Recently tracked on this device</p>
+              <ul className="space-y-1.5">
+                {recent.map((r) => (
+                  <li key={r.id}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNumber(r.id);
+                        setEmail(r.email);
+                        setLookup(r);
+                      }}
+                      className={cn(
+                        "flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition-colors",
+                        o?.id === r.id ? "border-[#3f7a55] bg-[#f4f7f5]" : "border-gray-200 hover:border-gray-300",
                       )}
-                      <PayNow
-                        order={order}
-                        email={searchEmail || order.guest_info?.email || ""}
-                        className="w-full sm:w-auto bg-green-700 hover:bg-green-800 text-white"
-                      />
-                    </div>
-                  )}
+                    >
+                      <span className="font-mono font-medium text-gray-900">{shortOrderId(r.id)}</span>
+                      <span className="truncate pl-3 text-xs text-gray-400">{r.email}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-                  {/* Order Items */}
-                  <div className="space-y-6 mb-12">
-                    <h3 className="font-semibold text-lg">
-                      Order items{" "}
-                      <span className="text-sm font-normal text-gray-500 ml-2">
-                        {order.items.reduce((acc, item) => acc + item.quantity, 0)} meals
-                      </span>
-                    </h3>
-                    {order.items.map((item: UserOrderItem) => (
-                      <div key={item.id} className="flex items-center gap-4">
-                        <div className="relative w-16 h-16 rounded-full overflow-hidden shrink-0">
-                          <Image
-                            src={getFullImageUrl(item.product?.image_url)}
-                            alt={item.product?.name || "Product image"}
-                            fill
-                            unoptimized
-                            className="object-cover"
-                          />
-
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900">
-                            {item.product?.name}
-                          </h4>
-                          <p className="text-sm text-gray-500">
-                            {item.selected_option && <span className="mr-2">{item.selected_option}</span>}
-                            Qty {item.quantity}
-                          </p>
-                        </div>
-                        <p className="font-semibold text-green-700">
-                          ₦{(item.price_at_time * item.quantity).toLocaleString()}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Timeline */}
-                  <div>
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className="font-semibold text-lg">Order status</h3>
-                      <span className={cn(
-                          "text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1",
-                          order.status === "cancelled" ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"
-                      )}>
-                        <div className={cn("w-1.5 h-1.5 rounded-full", order.status === "cancelled" ? "bg-red-500" : "bg-green-500")} />
-                        {order.status.toUpperCase()}
-                      </span>
-                    </div>
-
-                    <div className="relative space-y-8 pl-2">
-                      {generateTimeline(order.status).map((event: any, index: number) => {
-                        const Icon = event.icon;
-                        const timelineLength = order.status === "cancelled" ? 2 : 4;
-                        const isLast = index === timelineLength - 1;
-                        const isCompleted = event.status === "completed";
-                        const isCurrent = event.status === "current";
-                        const isCancelledStep = event.status === "cancelled";
-
-                        return (
-                          <div key={index} className="relative flex gap-6 z-10">
-                            {/* Vertical Line */}
-                            {!isLast && (
-                              <div
-                                className={cn(
-                                  "absolute left-[15px] top-10 bottom-[-32px] w-0.5",
-                                  isCompleted ? "bg-green-600" : isCancelledStep ? "bg-red-600" : "bg-gray-200",
-                                )}
-                              />
-                            )}
-
-                            {/* Icon */}
-                            <div
-                              className={cn(
-                                "w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-2 bg-white",
-                                isCompleted
-                                  ? "border-green-600 text-green-600"
-                                  : isCurrent
-                                    ? "border-green-600 text-green-600 ring-4 ring-green-100"
-                                    : isCancelledStep 
-                                      ? "border-red-600 text-red-600 ring-4 ring-red-100"
-                                      : "border-gray-200 text-gray-300",
-                              )}
-                            >
-                              {isCompleted || isCurrent || isCancelledStep ? (
-                                <Icon className="w-4 h-4" />
-                              ) : (
-                                <Circle className="w-4 h-4 fill-current" />
-                              )}
-                            </div>
-
-                            {/* Content */}
-                            <div
-                              className={cn(
-                                "flex-1 pt-1",
-                                !isCompleted && !isCurrent && !isCancelledStep && "opacity-50",
-                              )}
-                            >
-                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-baseline mb-1">
-                                <h4 className="font-bold text-gray-900">
-                                  {event.title}
-                                </h4>
-                                <span className="text-xs text-gray-500 font-medium">
-                                  {event.date}
-                                </span>
-                              </div>
-                              <p className="text-sm text-gray-600">
-                                {event.description}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Courier / Dispatch Info — shown once the admin has assigned one */}
-                  {order.delivery?.courier_name && (
-                    <div className="mt-8 pt-8 border-t">
-                      <h3 className="font-semibold text-lg mb-4">Delivery contact</h3>
-                      <div className="bg-blue-50 border border-blue-100 rounded-xl p-5 flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0 text-blue-600">
-                          <Bike className="w-5 h-5" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-bold text-gray-900">
-                            {order.delivery.courier_name}
-                            {order.delivery.courier_service && (
-                              <span className="ml-2 text-xs font-medium text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full uppercase tracking-wide">
-                                {order.delivery.courier_service}
-                              </span>
-                            )}
-                          </p>
-                          {order.delivery.courier_phone && (
-                            <a
-                              href={`tel:${order.delivery.courier_phone}`}
-                              className="mt-1 inline-flex items-center gap-1.5 text-sm text-blue-700 font-medium hover:underline"
-                            >
-                              <Phone className="w-3.5 h-3.5" />
-                              {order.delivery.courier_phone}
-                            </a>
-                          )}
-                          <p className="text-xs text-gray-500 mt-2">
-                            This is who has your order — pay the delivery fee to them directly, in cash, on arrival.
-                          </p>
-                        </div>
-                      </div>
-
-                      {order.delivery.delivery_pin && order.status !== "delivered" && order.status !== "cancelled" && (
-                        <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-5 flex items-start gap-4">
-                          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0 text-amber-600">
-                            <KeyRound className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-600 mb-1">Your delivery PIN</p>
-                            <p className="text-2xl font-bold tracking-widest text-amber-700">
-                              {order.delivery.delivery_pin}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              Give this code to the courier when your order arrives — it's how we confirm you received it.
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </Card>
-
-              {!isAuthenticated && (
-                <div className="bg-green-50 border border-green-200 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
-                  <div>
-                    <h4 className="font-bold text-gray-900 mb-1">Want to see all your orders easily next time?</h4>
-                    <p className="text-sm text-gray-600">Create a free account to automatically track order history and checkout faster.</p>
-                  </div>
-                  <Button asChild className="bg-green-700 hover:bg-green-800 whitespace-nowrap">
-                    <Link href={`/register?email=${encodeURIComponent(searchEmail)}`}>Create free account</Link>
-                  </Button>
-                </div>
-              )}
+          {(store.data?.contact_phone || store.data?.contact_email) && (
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 text-sm">
+              <p className="font-semibold text-gray-900">Need help with an order?</p>
+              <div className="mt-2 space-y-1.5 text-gray-600">
+                {store.data?.contact_phone && (
+                  <a href={`tel:${store.data.contact_phone}`} className="flex items-center gap-2 hover:text-gray-900"><Phone className="h-4 w-4 text-[#3f7a55]" /> {store.data.contact_phone}</a>
+                )}
+                {store.data?.contact_email && (
+                  <a href={`mailto:${store.data.contact_email}`} className="flex items-center gap-2 hover:text-gray-900"><Mail className="h-4 w-4 text-[#3f7a55]" /> {store.data.contact_email}</a>
+                )}
+              </div>
             </div>
           )}
         </div>
-      </main>
+
+        {/* Result */}
+        <div className="min-w-0">
+          {!o ? (
+            <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-16 text-center">
+              {track.isFetching ? (
+                <Loader2 className="h-8 w-8 animate-spin text-[#3f7a55]" />
+              ) : (
+                <>
+                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#f4f7f5] text-[#3f7a55]"><Truck className="h-7 w-7" /></span>
+                  <p className="font-semibold text-gray-900">Your order will show up here</p>
+                  <p className="max-w-sm text-sm text-gray-500">You&apos;ll see its progress, your delivery slot, the courier&apos;s details and your delivery PIN.</p>
+                </>
+              )}
+            </div>
+          ) : (
+            <OrderView order={o} zoneName={zones.data?.find((z) => z.id === o.delivery?.delivery_zone)?.name} store={store.data} email={lookup?.email ?? ""} refreshing={track.isFetching} onRefresh={() => track.refetch()} />
+          )}
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function OrderView({ order: o, zoneName, store, email, refreshing, onRefresh }: {
+  order: UserOrder;
+  zoneName?: string;
+  store?: { store_name: string; pickup_address: string | null; pickup_instructions: string | null };
+  email: string;
+  refreshing: boolean;
+  onRefresh: () => void;
+}) {
+  const pickup = o.delivery_method === "pickup";
+  const d = o.delivery;
+  const cancelled = o.status === "cancelled";
+  const { title, sub } = orderHeadline(o);
+  const itemsTotal = o.items.reduce((n, i) => n + i.price_at_time * i.quantity, 0);
+  const count = o.items.reduce((n, i) => n + i.quantity, 0);
+
+  return (
+    <div className="space-y-5">
+      {/* Status */}
+      <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+        <div className={cn("px-5 py-6 md:px-7", cancelled ? "bg-red-50" : o.status === "delivered" ? "bg-[#F0FFDF]" : "bg-[#f4f7f5]")}>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="font-mono text-sm text-gray-500">Order {shortOrderId(o.id)} · placed {when(o.created_at)}</p>
+              <h2 className={cn("mt-1 font-serif text-2xl font-semibold md:text-3xl", cancelled ? "text-red-800" : "text-[#1a1a1a]")}>{title}</h2>
+              {sub && <p className="mt-1 text-gray-600">{sub}</p>}
+            </div>
+            {!isFinished(o.status) && (
+              <button type="button" onClick={onRefresh} disabled={refreshing} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900">
+                <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} /> Refresh
+              </button>
+            )}
+          </div>
+        </div>
+
+        {cancelled ? (
+          <div className="flex items-start gap-3 px-5 py-4 text-sm text-gray-600 md:px-7">
+            <Ban className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+            <p>
+              Cancelled{o.cancelled_at && <> on {when(o.cancelled_at)}</>}.
+              {o.paid_at && o.payment_method !== "cod" && " If you paid online, the refund goes back to your original payment method."}
+            </p>
+          </div>
+        ) : (
+          <OrderProgress order={o} />
+        )}
+
+        {isUnpaid(o.status) && o.payment_method !== "cod" && (
+          <div className="space-y-3 border-t border-gray-100 px-5 py-4 md:px-7">
+            {o.payment_expires_at && <PaymentDeadline expiresAt={o.payment_expires_at} onExpired={onRefresh} />}
+            <PayNow order={o} email={email || o.guest_info?.email || ""} className="w-full bg-[#22c55e] text-white hover:bg-[#16a34a] sm:w-auto" />
+          </div>
+        )}
+      </section>
+
+      <PinAndCourier order={o} />
+
+      <div className="grid gap-5 md:grid-cols-2">
+        {/* Where / when */}
+        <section className="rounded-2xl border border-gray-200 bg-white p-5">
+          <h3 className="flex items-center gap-2 font-semibold text-gray-900">
+            {pickup ? <Store className="h-4 w-4 text-[#3f7a55]" /> : <MapPin className="h-4 w-4 text-[#3f7a55]" />}
+            {pickup ? "Pickup" : "Delivery"}
+          </h3>
+          {pickup ? (
+            <div className="mt-3 space-y-1 text-sm text-gray-600">
+              <p className="font-medium text-gray-900">{store?.store_name ?? "Our shop"}</p>
+              {store?.pickup_address && <p>{store.pickup_address}</p>}
+              {store?.pickup_instructions && <p className="whitespace-pre-line text-gray-500">{store.pickup_instructions}</p>}
+              <p className="pt-1 text-gray-500">Bring your order number: <span className="font-mono">{shortOrderId(o.id)}</span></p>
+            </div>
+          ) : d ? (
+            <div className="mt-3 space-y-1 text-sm text-gray-600">
+              {d.time_slot && (
+                <p className="flex items-center gap-2 font-medium text-gray-900"><Clock className="h-4 w-4 text-gray-400" /> {longDay(d.delivery_date)} · {d.time_slot}</p>
+              )}
+              <p>{zoneName ?? d.delivery_zone}</p>
+              <p>{d.address}{d.apartment && `, ${d.apartment}`}</p>
+              {d.landmark && <p className="text-gray-500">Near {d.landmark}</p>}
+            </div>
+          ) : null}
+        </section>
+
+        {/* Items */}
+        <section className="rounded-2xl border border-gray-200 bg-white p-5">
+          <h3 className="font-semibold text-gray-900">{count} item{count === 1 ? "" : "s"}</h3>
+          <ul className="mt-3 space-y-3">
+            {o.items.map((i) => (
+              <li key={i.id} className="flex items-center gap-3">
+                <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                  <Image src={getThumbnailUrl(i.product?.image_url, 88)} alt="" fill unoptimized className="object-cover" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-gray-900">{i.product?.name ?? "Item"}</p>
+                  <p className="text-xs text-gray-500">{i.selected_option ? `${i.selected_option} · ` : ""}×{i.quantity}</p>
+                </div>
+                <span className="text-sm font-semibold tabular-nums text-gray-900">{naira(i.price_at_time * i.quantity)}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-4 space-y-1 border-t border-gray-100 pt-3 text-sm">
+            <div className="flex justify-between"><span className="text-gray-500">Items</span><span className="tabular-nums">{naira(itemsTotal)}</span></div>
+            {!pickup && <div className="flex justify-between"><span className="text-gray-500">Delivery (cash to courier)</span><span className="tabular-nums">est. {naira(o.delivery_fee)}</span></div>}
+            <div className="flex justify-between pt-1 font-semibold">
+              <span>{o.payment_method === "cod" ? "To pay in cash" : o.paid_at ? "Paid online" : "To pay online"}</span>
+              <span className="tabular-nums">{naira(o.total_amount)}</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-[#dcebe1] bg-[#f4f7f5] p-5 sm:flex-row sm:items-center">
+        <div>
+          <p className="font-semibold text-gray-900">Track every order in one place</p>
+          <p className="text-sm text-gray-600">Create a free account with this email to see all your orders and check out faster.</p>
+        </div>
+        <Link href={`/register?email=${encodeURIComponent(email)}`} className="inline-flex h-10 shrink-0 items-center rounded-lg bg-[#3f7a55] px-4 text-sm font-semibold text-white hover:bg-[#2d583d]">
+          Create account
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+export default function OrderTrackingPage() {
+  return (
+    <div className="flex min-h-screen flex-col bg-white">
+      <Header />
+      {/* useSearchParams needs a Suspense boundary. */}
+      <Suspense fallback={<div className="flex flex-1 items-center justify-center p-24 text-gray-400"><Loader2 className="h-6 w-6 animate-spin" /></div>}>
+        <Tracking />
+      </Suspense>
       <Footer />
     </div>
   );

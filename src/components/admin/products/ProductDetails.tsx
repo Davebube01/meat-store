@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { StockPanel } from "./StockPanel";
 import { marginLabel } from "./sizeRows";
+import { useAdminCan } from "@/core/store/useAdminCan";
 
 
 interface ProductDetailsProps {
@@ -17,6 +18,7 @@ interface ProductDetailsProps {
 }
 
 export function ProductDetails({ product: initialProduct }: ProductDetailsProps) {
+  const can = useAdminCan();
   const router = useRouter();
   const [product, setProduct] = useState(initialProduct);
 
@@ -43,7 +45,7 @@ export function ProductDetails({ product: initialProduct }: ProductDetailsProps)
         >
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
         </Link>
-        <div className="flex gap-2 w-full sm:w-auto">
+        {can("products.edit") && <div className="flex gap-2 w-full sm:w-auto">
           <Link
             href={`/admin/products/${product.slug}/edit`}
             className="flex-1 sm:flex-none"
@@ -59,7 +61,7 @@ export function ProductDetails({ product: initialProduct }: ProductDetailsProps)
           >
             <Trash2 className="mr-2 h-4 w-4" /> Delete
           </Button>
-        </div>
+        </div>}
       </div>
 
       <div className="grid md:grid-cols-2 gap-8 bg-white p-8 rounded-xl border border-gray-200 shadow-[0_2px_8px_rgb(0,0,0,0.04)]">
@@ -115,6 +117,7 @@ export function ProductDetails({ product: initialProduct }: ProductDetailsProps)
                 {product.low_stock_threshold == null && <span className="text-gray-400"> (store default)</span>}
               </dd>
 
+              {can("costs.view") && <>
               <dt className="text-gray-500">Cost price</dt>
               <dd className="text-gray-900">
                 {product.cost_price == null ? (
@@ -135,6 +138,7 @@ export function ProductDetails({ product: initialProduct }: ProductDetailsProps)
                   </>
                 )}
               </dd>
+              </>}
 
               {product.parts && (
                 <>
@@ -147,7 +151,7 @@ export function ProductDetails({ product: initialProduct }: ProductDetailsProps)
         </div>
       </div>
 
-      <StockPanel product={product} onProductChange={setProduct} />
+      {can("stock.adjust") && <StockPanel product={product} onProductChange={setProduct} />}
     </div>
   );
 }

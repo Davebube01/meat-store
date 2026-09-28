@@ -5,6 +5,7 @@ import { Product, deleteAdminProduct } from "@/core/api";
 import { API_BASE_URL } from "@/core/api/client";
 import { Edit, Trash2, Search, ChevronDown, Eye } from "lucide-react";
 import Link from "next/link";
+import { useAdminCan } from "@/core/store/useAdminCan";
 import Image from "next/image";
 
 // Fallback only if the API didn't send one; the store default lives in Settings.
@@ -20,6 +21,7 @@ interface ProductListProps {
 
 export function ProductList({ products, onRefresh }: ProductListProps) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const can = useAdminCan();
 
   // Search and Category above are still decorative — not part of this pass,
   // which is scoped to the stock column and the Low Stock filter.
@@ -158,13 +160,13 @@ export function ProductList({ products, onRefresh }: ProductListProps) {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center gap-3">
-                      <Link
+                      {can("products.edit") && <Link
                         href={`/admin/products/${product.slug}/edit`}
                         className="text-[#3f7a55] hover:text-[#2d583d] transition-colors"
                         title="Edit Product"
                       >
                         <Edit className="h-4 w-4" strokeWidth={2.5} />
-                      </Link>
+                      </Link>}
                       <Link
                         href={`/admin/products/${product.slug}`}
                         className="text-[#3f7a55] hover:text-[#2d583d] transition-colors"
@@ -172,13 +174,13 @@ export function ProductList({ products, onRefresh }: ProductListProps) {
                       >
                         <Eye className="h-4 w-4" strokeWidth={2.5} />
                       </Link>
-                      <button
+                      {can("products.edit") && <button
                         onClick={() => handleDelete(product.id)}
                         className="text-red-500 hover:text-red-700 transition-colors"
                         title="Delete Product"
                       >
                         <Trash2 className="h-4 w-4" strokeWidth={2.5} />
-                      </button>
+                      </button>}
                     </div>
                   </td>
                 </tr>

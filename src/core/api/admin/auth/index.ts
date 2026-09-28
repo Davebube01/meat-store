@@ -8,7 +8,7 @@ export const adminLogin = async (email: string, password: string) => {
 };
 
 export const getAdminMe = async () => {
-  return fetchClient<any>("/admin/auth/me");
+  return fetchClient<import("@/core/store/useAdminAuthStore").AdminUser>("/admin/auth/me");
 };
 
 export const logoutAdmin = async () => {

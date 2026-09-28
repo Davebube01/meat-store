@@ -6,9 +6,11 @@ import { getAdminProducts, Product } from "@/core/api";
 import { Plus, Loader2, AlertCircle } from "lucide-react";
 
 import Link from "next/link";
+import { useAdminCan } from "@/core/store/useAdminCan";
 import { useEffect, useState } from "react";
 
 export default function AdminProductsPage() {
+  const can = useAdminCan();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,11 +40,11 @@ export default function AdminProductsPage() {
             Manage your product inventory.
           </p>
         </div>
-        <Link href="/admin/products/create">
+        {can("products.edit") && <Link href="/admin/products/create">
           <Button className="bg-[#3f7a55] hover:bg-[#2d583d] text-white font-medium px-4 py-2 rounded-md transition-colors w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" /> Add New Product
           </Button>
-        </Link>
+        </Link>}
       </div>
 
       {loading && (
