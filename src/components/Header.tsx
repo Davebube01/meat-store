@@ -1,6 +1,6 @@
 "use client";
 
-import { ChefHat, ShoppingCart, LogOut, User } from "lucide-react";
+import { ChefHat, LogOut, User } from "lucide-react";
 import Link from "next/link";
 import { CartSheet } from "./CartSheet";
 import { useAuthStore } from "@/core/store/useAuthStore";
@@ -47,28 +47,35 @@ export function Header() {
             </SheetTrigger>
             <SheetContent side="left">
               <SheetHeader>
-                <SheetTitle className="font-serif font-bold text-xl text-amber-900 text-left">
+                <SheetTitle className="font-serif font-semibold text-xl text-[#1a1a1a] text-left">
                   Menu
                 </SheetTitle>
               </SheetHeader>
               <nav className="flex flex-col gap-4 mt-8">
                 <Link
                   href="/"
-                  className="text-lg font-medium hover:text-amber-900 transition-colors"
+                  className="text-lg font-medium hover:text-[#3f7a55] transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Home
                 </Link>
                 <Link
                   href="/products"
-                  className="text-lg font-medium hover:text-amber-900 transition-colors"
+                  className="text-lg font-medium hover:text-[#3f7a55] transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  Products
+                  Shop
+                </Link>
+                <Link
+                  href="/order-tracking"
+                  className="text-lg font-medium hover:text-[#3f7a55] transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Track order
                 </Link>
                 <Link
                   href="/orders"
-                  className="text-lg font-medium hover:text-amber-900 transition-colors"
+                  className="text-lg font-medium hover:text-[#3f7a55] transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Orders
@@ -98,7 +105,13 @@ export function Header() {
               href="/products"
               className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
             >
-              Products
+              Shop
+            </Link>
+            <Link
+              href="/order-tracking"
+              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            >
+              Track order
             </Link>
             <Link
               href="/orders"

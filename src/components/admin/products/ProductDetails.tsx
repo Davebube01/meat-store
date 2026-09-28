@@ -9,6 +9,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { StockPanel } from "./StockPanel";
+import { marginLabel } from "./sizeRows";
 
 
 interface ProductDetailsProps {
@@ -106,6 +107,27 @@ export function ProductDetails({ product: initialProduct }: ProductDetailsProps)
                       .map((o) => `${o.label} · ₦${o.price.toLocaleString()} (uses ${o.stock_units})`)
                       .join(", ")
                   : "None"}
+              </dd>
+
+              <dt className="text-gray-500">Cost price</dt>
+              <dd className="text-gray-900">
+                {product.cost_price == null ? (
+                  <span className="text-amber-600">Not set</span>
+                ) : (
+                  <>
+                    ₦{product.cost_price.toLocaleString()} per unit of stock
+                    <ul className="mt-1 space-y-0.5 text-xs text-gray-500">
+                      {(product.weight_options.length
+                        ? product.weight_options
+                        : [{ label: "Each", price: product.price, stock_units: 1 }]
+                      ).map((o) => (
+                        <li key={o.label} className={o.price < product.cost_price! * o.stock_units ? "text-red-600" : ""}>
+                          {o.label}: {marginLabel(o.price, product.cost_price! * o.stock_units)}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
               </dd>
 
               {product.parts && (

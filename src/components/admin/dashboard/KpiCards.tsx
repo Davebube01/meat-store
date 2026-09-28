@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Banknote, ShoppingBag, Receipt, PackageCheck, TrendingUp, TrendingDown, Clock } from "lucide-react";
+import { Banknote, ShoppingBag, Receipt, PackageCheck, TrendingUp, TrendingDown, Clock, PiggyBank } from "lucide-react";
 import type { DashboardKpis, DashboardRange } from "@/core/api";
 import { naira, percentChange } from "./format";
 
@@ -49,11 +49,45 @@ function Card({ label, icon: Icon, iconClass, value, children, href }: {
   return href ? <Link href={href}>{body}</Link> : body;
 }
 
+function ProfitNote({ kpis, range }: { kpis: DashboardKpis; range: DashboardRange }) {
+  if (kpis.gross_profit === null) {
+    return (
+      <Link href="/admin/products" className="text-xs text-gray-400 hover:text-[#3f7a55]">
+        {kpis.revenue ? "Add cost prices to your products to see profit" : "No sales yet"}
+      </Link>
+    );
+  }
+  const coverage = kpis.profit_coverage ?? 1;
+  return (
+    <div className="space-y-1">
+      {kpis.gross_profit_prev !== null && (
+        <Delta current={kpis.gross_profit} previous={kpis.gross_profit_prev} range={range} />
+      )}
+      <p className="text-xs text-gray-500">
+        {kpis.profit_margin !== null && <>{Math.round(kpis.profit_margin * 100)}% margin</>}
+        {coverage < 0.995 && (
+          <Link href="/admin/products" className="text-amber-600 hover:underline">
+            {" "}· covers {Math.round(coverage * 100)}% of sales
+          </Link>
+        )}
+      </p>
+    </div>
+  );
+}
+
 export function KpiCards({ kpis, range }: { kpis: DashboardKpis; range: DashboardRange }) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
       <Card label="Revenue" icon={Banknote} iconClass="bg-green-50 text-[#3f7a55]" value={naira(kpis.revenue)}>
         <Delta current={kpis.revenue} previous={kpis.revenue_prev} range={range} />
+      </Card>
+      <Card
+        label="Gross profit"
+        icon={PiggyBank}
+        iconClass="bg-green-50 text-[#3f7a55]"
+        value={kpis.gross_profit === null ? "—" : naira(kpis.gross_profit)}
+      >
+        <ProfitNote kpis={kpis} range={range} />
       </Card>
       <Card label="Orders" icon={ShoppingBag} iconClass="bg-green-50 text-[#3f7a55]" value={kpis.orders}>
         <Delta current={kpis.orders} previous={kpis.orders_prev} range={range} />

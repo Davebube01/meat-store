@@ -4,11 +4,16 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SizeRow, guessKg } from "./sizeRows";
+import { SizeRow, guessKg, marginLabel } from "./sizeRows";
 
 const inputClass = "border-gray-200 focus-visible:ring-[#3f7a55]/30 focus-visible:border-[#3f7a55]";
 
-export function SizeOptionsEditor({ rows, onChange }: { rows: SizeRow[]; onChange: (rows: SizeRow[]) => void }) {
+export function SizeOptionsEditor({ rows, onChange, costPrice }: {
+  rows: SizeRow[];
+  onChange: (rows: SizeRow[]) => void;
+  /** Cost per unit of stock, for showing each size's margin. */
+  costPrice?: number;
+}) {
   const update = (index: number, patch: Partial<SizeRow>) =>
     onChange(rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
 
@@ -76,6 +81,15 @@ export function SizeOptionsEditor({ rows, onChange }: { rows: SizeRow[]; onChang
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
+              {costPrice !== undefined && parseFloat(row.price) > 0 && parseFloat(row.stockUnits) > 0 && (
+                <p
+                  className={`col-span-2 text-xs sm:col-span-4 ${
+                    parseFloat(row.price) < costPrice * parseFloat(row.stockUnits) ? "text-red-600" : "text-gray-500"
+                  }`}
+                >
+                  {marginLabel(parseFloat(row.price), costPrice * parseFloat(row.stockUnits))}
+                </p>
+              )}
             </div>
           ))}
         </div>

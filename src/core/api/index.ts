@@ -8,6 +8,8 @@ export * from "./admin/categories";
 export * from "./admin/upload";
 export * from "./admin/customers";
 export * from "./admin/dashboard";
+export * from "./admin/inventory";
+export * from "./admin/settings";
 // Admin orders — explicit re-exports to avoid collision with user/orders
 export { getOrders, getOrderById, updateOrderStatus, updateAdminOrderStatus, dispatchOrder, confirmDelivery, cancelAdminOrder } from "./admin/orders";
 export type { Order, OrderItem, OrderDelivery, DispatchPayload, AdminOrderStatus, OrderStatus } from "./admin/orders";

@@ -4,7 +4,8 @@
   ShoppingCart, 
   Users, 
   Settings,
-  Tags
+  Tags,
+  Boxes
 } from "lucide-react";
 
 export const ADMIN_ROUTES = [
@@ -22,6 +23,11 @@ export const ADMIN_ROUTES = [
     label: "Categories",
     icon: Tags,
     href: "/admin/categories",
+  },
+  {
+    label: "Inventory",
+    icon: Boxes,
+    href: "/admin/inventory",
   },
   {
     label: "Orders",

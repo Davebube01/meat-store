@@ -9,6 +9,13 @@ export interface DashboardKpis {
   orders_prev: number;
   avg_order_value: number;
   avg_order_value_prev: number;
+  /** Revenue minus cost over items with a known cost; null when none have one. */
+  gross_profit: number | null;
+  gross_profit_prev: number | null;
+  /** gross_profit / the revenue it covers (0.25 = 25%). */
+  profit_margin: number | null;
+  /** Share of revenue with a known cost; below 1 means profit is partial. */
+  profit_coverage: number | null;
   awaiting_dispatch: number;
   overdue_dispatch: number;
 }
@@ -53,6 +60,8 @@ export interface TopProduct {
   image_url: string | null;
   units: number;
   revenue: number;
+  /** Null when none of its sales had a known cost. */
+  profit: number | null;
 }
 
 export interface AdminDashboard {

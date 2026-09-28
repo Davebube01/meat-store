@@ -27,6 +27,13 @@ export function parseSizeRows(rows: SizeRow[]): WeightOption[] | string {
   return options;
 }
 
+/** "₦12,000 cost · 25% margin" for a price, given what it costs us. */
+export function marginLabel(price: number, cost: number): string {
+  if (!(price > 0)) return "";
+  const margin = Math.round(((price - cost) / price) * 100);
+  return `₦${Math.round(cost).toLocaleString()} cost · ${margin}% margin${price < cost ? " — below cost" : ""}`;
+}
+
 // "2kg" → 2, "500g" → 0.5: a sensible stock default for cuts stocked in kg.
 export const guessKg = (label: string): string | undefined => {
   const m = label.trim().match(/^(\d+(?:\.\d+)?)\s*(kg|g)\b/i);

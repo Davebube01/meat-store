@@ -1,60 +1,47 @@
-﻿import { Truck, ShieldCheck, Clock, Leaf } from "lucide-react";
+import { Truck, ShieldCheck, Clock, Leaf } from "lucide-react";
 
 const features = [
   {
     icon: Truck,
-    title: "Fast Delivery",
-    description:
-      "Get your fresh meet delivered to your doorstep within 24 hours in Abuja.",
+    title: "Delivered on your schedule",
+    description: "Pick the day and the 1-hour slot that suits you, anywhere in our Abuja delivery zones.",
   },
   {
     icon: ShieldCheck,
-    title: "Quality Guaranteed",
-    description:
-      "We source only the healthiest, premium goats from trusted local farms.",
+    title: "Quality guaranteed",
+    description: "We source only healthy, premium goats from trusted local farms.",
   },
   {
     icon: Clock,
-    title: "Fresh Daily",
-    description:
-      "Everything is handled daily to give you the best quality.",
+    title: "Fresh daily",
+    description: "Everything is handled daily to give you the best quality.",
   },
   {
     icon: Leaf,
-    title: "100% Natural",
-    description:
-      "No preservatives or chemicals. Just pure, natural, grass-fed goat meat.",
+    title: "100% natural",
+    description: "No preservatives or chemicals. Just pure, natural, grass-fed goat meat.",
   },
 ];
 
 export function WhyChooseUs() {
   return (
-    <section className="py-16 md:py-24 bg-white">
+    <section className="bg-white py-16 md:py-20">
       <div className="container mx-auto px-4">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-3xl font-bold font-serif tracking-tight text-[#1a1a1a] md:text-4xl mb-4">
-            Why Choose Everything Fresh?
+        <div className="mx-auto mb-10 max-w-2xl text-center">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#3f7a55]">Why Everything Fresh</p>
+          <h2 className="mt-2 font-serif text-3xl font-semibold tracking-tight text-[#1a1a1a] md:text-4xl">
+            Fresh food you can trust, every day
           </h2>
-          <p className="text-lg text-gray-600">
-            We are committed to delivering fresh, high-quality food you can trust—every single day.
-          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className="flex flex-col items-center text-center p-6 rounded-2xl bg-[#F0FFDF] hover:shadow-lg transition-all duration-300 group"
-            >
-              <div className="h-16 w-16 mb-6 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-300">
-                <feature.icon className="h-8 w-8 text-green-500" />
-              </div>
-              <h3 className="text-xl font-bold text-[#1a1a1a] mb-3">
-                {feature.title}
-              </h3>
-              <p className="text-gray-600 leading-relaxed">
-                {feature.description}
-              </p>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {features.map((feature) => (
+            <div key={feature.title} className="rounded-2xl border border-gray-200 p-6">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f4f7f5] text-[#3f7a55]">
+                <feature.icon className="h-5 w-5" />
+              </span>
+              <h3 className="mt-5 text-lg font-semibold text-gray-900">{feature.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-gray-600">{feature.description}</p>
             </div>
           ))}
         </div>

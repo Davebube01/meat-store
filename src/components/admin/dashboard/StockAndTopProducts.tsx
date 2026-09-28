@@ -96,7 +96,10 @@ export function TopProductsCard({ items, rangeLabel }: { items: TopProduct[]; ra
               <Thumb url={p.image_url} name={p.name} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-gray-900">{p.name}</p>
-                <p className="text-xs text-gray-400">{naira(p.revenue)} revenue</p>
+                <p className="text-xs text-gray-400">
+                  {naira(p.revenue)} revenue
+                  {p.profit !== null && <> · {naira(p.profit)} profit</>}
+                </p>
               </div>
               <span className="text-sm font-semibold tabular-nums text-gray-900">{p.units} sold</span>
             </li>

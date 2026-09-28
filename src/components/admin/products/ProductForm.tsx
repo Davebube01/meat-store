@@ -12,7 +12,7 @@ import Image from "next/image";
 import { toast } from "react-toastify";
 import { API_BASE_URL } from "@/core/api/client";
 import { SizeOptionsEditor } from "./SizeOptionsEditor";
-import { SizeRow, parseSizeRows, toSizeRows } from "./sizeRows";
+import { SizeRow, marginLabel, parseSizeRows, toSizeRows } from "./sizeRows";
 
 
 interface ProductFormProps {
@@ -31,6 +31,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
   const [sizeRows, setSizeRows] = useState<SizeRow[]>(toSizeRows(initialData?.weight_options));
   const [partsInput, setPartsInput] = useState<string>(initialData?.parts?.join(", ") ?? "");
   const hasSizes = sizeRows.length > 0;
+  const [costInput, setCostInput] = useState<string>(initialData?.cost_price?.toString() ?? "");
+  const costPrice = costInput.trim() === "" ? undefined : parseFloat(costInput);
   const [imageMode, setImageMode] = useState<ImageInputMode>(initialData?.image_url?.startsWith("http") ? "url" : "upload");
   const [previewUrl, setPreviewUrl] = useState<string>("");
 
@@ -159,10 +161,15 @@ export function ProductForm({ initialData }: ProductFormProps) {
       return;
     }
     const parts = partsInput.split(",").map((p) => p.trim()).filter(Boolean);
+    if (costPrice !== undefined && !(costPrice >= 0)) {
+      toast.warning("Cost price can't be negative.");
+      return;
+    }
     const payload: Partial<Product> = {
       ...formData,
       weight_options: weightOptions,
       parts,
+      cost_price: costPrice ?? null,
       // With sizes, the listed price is the cheapest size (the server sets it too).
       price: weightOptions.length ? Math.min(...weightOptions.map((o) => o.price)) : formData.price,
     };
@@ -282,9 +289,29 @@ export function ProductForm({ initialData }: ProductFormProps) {
             />
           )}
         </div>
+        <div className="grid gap-2">
+          <Label htmlFor="cost_price" className="text-sm font-medium text-gray-700">
+            Cost price (₦) <span className="text-gray-400 font-normal">(per unit of stock, e.g. per kg)</span>
+          </Label>
+          <Input
+            id="cost_price"
+            type="number"
+            value={costInput}
+            onChange={(e) => setCostInput(e.target.value)}
+            placeholder="Optional"
+            min="0"
+            step="any"
+            className="border-gray-200 focus-visible:ring-[#3f7a55]/30 focus-visible:border-[#3f7a55]"
+          />
+          <p className={`text-xs ${!hasSizes && costPrice !== undefined && (formData.price ?? 0) < costPrice ? "text-red-600" : "text-gray-400"}`}>
+            {!hasSizes && costPrice !== undefined && (formData.price ?? 0) > 0
+              ? marginLabel(formData.price ?? 0, costPrice)
+              : "What one unit of stock costs you. Only admins see it; it's used for profit."}
+          </p>
+        </div>
       </div>
 
-      <SizeOptionsEditor rows={sizeRows} onChange={setSizeRows} />
+      <SizeOptionsEditor rows={sizeRows} onChange={setSizeRows} costPrice={costPrice} />
 
       <div className="grid gap-2">
         <Label htmlFor="parts" className="text-sm font-medium text-gray-700">

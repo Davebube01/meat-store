@@ -17,6 +17,8 @@ export interface Product {
   image_url: string;
   category: string;
   weight_options: WeightOption[];
+  /** Cost per unit of stock. Only returned by admin endpoints. */
+  cost_price?: number | null;
   parts?: string[];
   stock_quantity: number;
   is_active: boolean;
