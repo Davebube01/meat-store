@@ -26,6 +26,7 @@ export interface Product {
   parts?: string[];
   stock_quantity: number;
   is_active: boolean;
+  created_at?: string;
 }
 
 

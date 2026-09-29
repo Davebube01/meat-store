@@ -3,11 +3,14 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
-import { AlertCircle, CreditCard, Loader2, MapPin, Store } from "lucide-react";
+import { AlertCircle, CreditCard, FileText, HelpCircle, Loader2, MapPin, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StoreDetailsForm } from "@/components/admin/settings/StoreDetailsForm";
 import { DeliveryZonesEditor } from "@/components/admin/settings/DeliveryZonesEditor";
 import { PaymentsCard } from "@/components/admin/settings/PaymentsCard";
+import { FaqEditor } from "@/components/admin/settings/FaqEditor";
+import { LegalPagesEditor } from "@/components/admin/settings/LegalPagesEditor";
+import { getAdminFaqs, saveAdminFaqs, type FaqInput } from "@/core/api/admin/faqs";
 import {
   getAdminSettings, updateDeliveryZones, updateStoreDetails,
   type AdminSettings, type DeliveryZoneInput, type StoreDetails,
@@ -17,6 +20,8 @@ const SECTIONS = [
   { key: "store", label: "Store details", icon: Store },
   { key: "zones", label: "Delivery zones", icon: MapPin },
   { key: "payments", label: "Payments", icon: CreditCard },
+  { key: "faq", label: "FAQ page", icon: HelpCircle },
+  { key: "legal", label: "Legal pages", icon: FileText },
 ] as const;
 type Section = (typeof SECTIONS)[number]["key"];
 
@@ -27,6 +32,7 @@ export default function SettingsPage() {
   const [section, setSection] = useState<Section>("store");
   const [storeError, setStoreError] = useState<string | null>(null);
   const [zonesError, setZonesError] = useState<string | null>(null);
+  const [faqError, setFaqError] = useState<string | null>(null);
 
   const { data, isPending, isError, error, refetch } = useQuery({ queryKey: QUERY_KEY, queryFn: getAdminSettings });
 
@@ -51,6 +57,17 @@ export default function SettingsPage() {
       toast.success("Delivery zones saved. Checkout uses the new fees now.");
     },
     onError: (err: Error) => setZonesError(err.message),
+  });
+
+  const faqs = useQuery({ queryKey: ["admin-faqs"], queryFn: getAdminFaqs, enabled: section === "faq" });
+  const saveFaqs = useMutation({
+    mutationFn: (items: FaqInput[]) => saveAdminFaqs(items),
+    onMutate: () => setFaqError(null),
+    onSuccess: (items) => {
+      queryClient.setQueryData(["admin-faqs"], { items, is_default: false });
+      toast.success("FAQ page saved");
+    },
+    onError: (err: Error) => setFaqError(err.message),
   });
 
   return (
@@ -115,6 +132,25 @@ export default function SettingsPage() {
               />
             )}
             {section === "payments" && <PaymentsCard status={data.payments} />}
+            {section === "legal" && <LegalPagesEditor />}
+            {section === "faq" &&
+              (faqs.data ? (
+                <FaqEditor
+                  key={JSON.stringify(faqs.data)}
+                  initial={faqs.data.items}
+                  isDefault={faqs.data.is_default}
+                  saving={saveFaqs.isPending}
+                  error={faqError}
+                  onSave={(items) => saveFaqs.mutate(items)}
+                />
+              ) : faqs.isError ? (
+                <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-700">
+                  <AlertCircle className="h-5 w-5" /> Couldn&apos;t load the FAQ page.
+                  <Button variant="outline" size="sm" onClick={() => faqs.refetch()}>Retry</Button>
+                </div>
+              ) : (
+                <div className="flex justify-center p-16"><Loader2 className="h-6 w-6 animate-spin text-green-600" /></div>
+              ))}
           </div>
         </div>
       )}

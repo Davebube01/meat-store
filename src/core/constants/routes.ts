@@ -10,6 +10,7 @@ import {
   History,
   FileDown,
   UserCog,
+  Inbox,
 } from "lucide-react";
 import { hasPermission, type AdminPermission } from "@/core/store/useAdminCan";
 
@@ -21,6 +22,7 @@ export const ADMIN_ROUTES: { label: string; icon: typeof LayoutDashboard; href: 
   { label: "Categories", icon: Tags, href: "/admin/categories", permission: "products.edit" },
   { label: "Inventory", icon: Boxes, href: "/admin/inventory", permission: "inventory.view" },
   { label: "Customers", icon: Users, href: "/admin/customers", permission: "customers.view" },
+  { label: "Messages", icon: Inbox, href: "/admin/messages", permission: "messages" },
   { label: "Exports", icon: FileDown, href: "/admin/exports", permission: "exports" },
   { label: "Activity", icon: History, href: "/admin/activity", permission: "activity.view" },
   { label: "Staff", icon: UserCog, href: "/admin/staff", permission: "staff.manage" },

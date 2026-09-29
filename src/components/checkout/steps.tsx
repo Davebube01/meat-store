@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   Banknote, Check, ChevronRight, Clock, CreditCard, Info, Loader2, Lock, MapPin, Store, Truck, UserRound,
@@ -526,6 +527,11 @@ export function ReviewStep({ pickup, total, payment, onPayment, placing, onBack,
               : pickup
                 ? `You'll pay ${naira(total)} in cash at pickup.`
                 : `You'll pay ${naira(total)} for your items plus the delivery fee, in cash on delivery.`}
+          </p>
+          <p className="text-center text-xs text-gray-400 sm:text-right">
+            By placing your order you agree to our{" "}
+            <Link href="/terms" target="_blank" className="underline underline-offset-2 hover:text-gray-600">terms</Link> and{" "}
+            <Link href="/privacy" target="_blank" className="underline underline-offset-2 hover:text-gray-600">privacy policy</Link>.
           </p>
         </div>
       </div>

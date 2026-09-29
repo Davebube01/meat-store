@@ -310,7 +310,9 @@ export function AuthForm({ defaultTab = "login", initialEmail = "", onSuccess, s
 
         {isRegister && (
           <p className="text-xs text-gray-500">
-            By creating an account you agree to our terms and privacy policy. We&apos;ll send a link to confirm your email.
+            By creating an account you agree to our{" "}
+            <Link href="/terms" target="_blank" className="font-medium text-[#3f7a55] hover:underline">terms</Link> and{" "}
+            <Link href="/privacy" target="_blank" className="font-medium text-[#3f7a55] hover:underline">privacy policy</Link>. We&apos;ll send a link to confirm your email.
           </p>
         )}
 

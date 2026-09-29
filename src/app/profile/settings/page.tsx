@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { changeMyPassword, signOutOtherSessions } from "@/core/api/user/account";
 import { logout } from "@/core/auth/logout";
+import { DeleteAccountSection } from "@/components/profile/DeleteAccountSection";
 
 const MIN = 8;
 
@@ -108,6 +109,8 @@ export default function SecurityPage() {
           </button>
         </div>
       </section>
+
+      <DeleteAccountSection />
     </>
   );
 }

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, PackageX, TriangleAlert } from "lucide-react";
+import { Bell, Mail, PackageX, TriangleAlert } from "lucide-react";
 import {
   AdminNotification,
   getAdminNotifications,
@@ -24,10 +24,11 @@ function timeAgo(iso: string): string {
 
 function Item({ n, onOpen }: { n: AdminNotification; onOpen: (n: AdminNotification) => void }) {
   const out = n.kind === "out_of_stock";
-  const Icon = out ? PackageX : TriangleAlert;
+  const message = n.kind === "contact_message";
+  const Icon = message ? Mail : out ? PackageX : TriangleAlert;
   const content = (
     <div className={`flex gap-3 px-4 py-3 ${n.read_at ? "opacity-60" : ""} hover:bg-gray-50`}>
-      <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${out ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-600"}`}>
+      <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${message ? "bg-[#f4f7f5] text-[#3f7a55]" : out ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-600"}`}>
         <Icon className="h-4 w-4" />
       </span>
       <div className="min-w-0 flex-1">

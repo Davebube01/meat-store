@@ -1,12 +1,15 @@
-﻿import { Header } from "@/components/Header";
+import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ProductList } from "./ProductList";
+import { SORTS, type ListState } from "./listState";
 import { getCategories, getProducts } from "@/core/api";
 
 export const metadata = {
-  title: "All Products - Goat Meat Store",
-  description: "Browse our selection of premium fresh goat meat.",
+  title: "Shop | Everything Fresh",
+  description: "Fresh goat meat, cuts, bundles and market produce, delivered across Abuja.",
 };
+
+const one = (v: string | string[] | undefined) => (typeof v === "string" ? v : undefined);
 
 export default async function ProductsPage({
   searchParams,
@@ -14,26 +17,23 @@ export default async function ProductsPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const [products, categories, params] = await Promise.all([getProducts(), getCategories(), searchParams]);
-  // ?category=<slug> preselects the filter (links from product pages use it).
-  const requested = typeof params.category === "string" ? params.category : undefined;
-  const initialCategory = categories.some((c) => c.slug === requested) ? requested : "all";
+
+  // Filters live in the URL (?category=&q=&sort=&stock=1), so links and the
+  // back button bring you to the same view.
+  const category = one(params.category);
+  const sort = one(params.sort);
+  const initial: ListState = {
+    category: categories.some((c) => c.slug === category) ? category! : "all",
+    q: one(params.q) ?? "",
+    sort: SORTS.some((s) => s.key === sort) ? (sort as ListState["sort"]) : "featured",
+    inStock: one(params.stock) === "1",
+  };
 
   return (
-    <div className="flex min-h-screen flex-col bg-background font-sans">
+    <div className="flex min-h-screen flex-col bg-white">
       <Header />
-      <main className="flex-1 py-8 md:py-12 lg:py-24 bg-[#FFF8F1]">
-        <div className="container mx-auto px-4">
-          <div className="mb-12">
-            <h1 className="text-4xl font-bold font-serif text-[#1a1a1a] mb-4">
-              Our Products
-            </h1>
-            <p className="text-lg text-gray-600">
-              Fresh from the farm to your table
-            </p>
-          </div>
-
-          <ProductList initialProducts={products} categories={categories} initialCategory={initialCategory} />
-        </div>
+      <main className="flex-1 bg-[#FFF8F1]">
+        <ProductList products={products} categories={categories} initial={initial} />
       </main>
       <Footer />
     </div>

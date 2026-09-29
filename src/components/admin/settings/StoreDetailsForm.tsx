@@ -78,6 +78,21 @@ export function StoreDetailsForm({ initial, saving, error, onSave }: Props) {
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-6">
+        <h2 className="text-base font-semibold text-gray-900">About page</h2>
+        <p className="mt-1 text-sm text-gray-500">
+          Tell customers who you are. Shown on the store&apos;s <a href="/about" target="_blank" rel="noreferrer" className="font-medium text-[#3f7a55] hover:underline">About page</a>. Leave blank to use neutral default wording.
+        </p>
+        <div className="mt-5 grid grid-cols-1 gap-5">
+          <Field id="about_headline" label="Headline">
+            <Input id="about_headline" value={v.about_headline ?? ""} maxLength={120} placeholder="e.g. Fresh goat meat from our family to yours" onChange={(e) => set("about_headline", e.target.value)} />
+          </Field>
+          <Field id="about_story" label="Your story" hint={`Blank lines start new paragraphs. ${(v.about_story ?? "").length}/4000`}>
+            <Textarea id="about_story" rows={8} maxLength={4000} value={v.about_story ?? ""} placeholder="How you started, where your goats come from, how you prepare them…" onChange={(e) => set("about_story", e.target.value)} />
+          </Field>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-gray-200 bg-white p-6">
         <h2 className="text-base font-semibold text-gray-900">Stock alerts</h2>
         <div className="mt-5 max-w-xs">
           <Field id="low_stock_threshold" label="Low-stock threshold" hint="Products at or below this show as low stock on the dashboard and inventory.">

@@ -38,6 +38,17 @@ export const changeMyPassword = async (current_password: string, new_password: s
     credentials: "include", // the session cookie tells the API which session to keep
   });
 
+/**
+ * Deletes the signed-in account (needs the password). Personal details and
+ * saved addresses go; past orders stay without them. Clears the session cookie.
+ */
+export const deleteMyAccount = async (password: string) =>
+  fetchClient<{ deleted: boolean }>("/api/v1/auth/delete-account", {
+    method: "POST",
+    body: JSON.stringify({ password }),
+    credentials: "include",
+  });
+
 export const signOutOtherSessions = async () =>
   fetchClient<{ ok: boolean; other_sessions_ended: number }>("/api/v1/auth/sessions/sign-out-others", {
     method: "POST",

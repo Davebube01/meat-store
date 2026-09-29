@@ -8,6 +8,8 @@ export interface StoreDetails {
   address: string | null;
   pickup_address: string | null;
   pickup_instructions: string | null;
+  about_headline: string | null;
+  about_story: string | null;
   low_stock_threshold: number;
 }
 

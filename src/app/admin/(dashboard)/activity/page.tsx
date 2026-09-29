@@ -4,9 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { toast } from "react-toastify";
-import {
-  AlertCircle, Boxes, FileDown, Loader2, LogIn, Search, Settings, ShoppingBag, ShoppingCart, Store, Tags, UserCog, type LucideIcon,
-} from "lucide-react";
+import { AlertCircle, Boxes, FileDown, Inbox, Loader2, LogIn, Search, Settings, ShoppingBag, ShoppingCart, Store, Tags, type LucideIcon, UserCog } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { downloadExport, getActivity, type ActivityEntityType, type ActivityEntry } from "@/core/api";
@@ -22,11 +20,12 @@ const TYPES: { key: ActivityEntityType | "all"; label: string }[] = [
   { key: "category", label: "Categories" },
   { key: "settings", label: "Settings" },
   { key: "staff", label: "Staff" },
+  { key: "message", label: "Messages" },
   { key: "admin", label: "Sign-ins & exports" },
 ];
 
 const ICONS: Record<string, LucideIcon> = {
-  product: ShoppingBag, order: ShoppingCart, sale: Store, category: Tags, settings: Settings, admin: LogIn, staff: UserCog,
+  product: ShoppingBag, order: ShoppingCart, sale: Store, category: Tags, settings: Settings, admin: LogIn, staff: UserCog, message: Inbox,
 };
 
 const FIELD_NAMES: Record<string, string> = {
@@ -59,6 +58,7 @@ function linkFor(entry: ActivityEntry): string | null {
   if (!entry.entity_id) return null;
   if (entry.entity_type === "order") return `/admin/orders/${entry.entity_id}`;
   if (entry.entity_type === "sale") return `/admin/sales/${entry.entity_id}`;
+  if (entry.entity_type === "message") return `/admin/messages?open=${entry.entity_id}`;
   return null;
 }
 

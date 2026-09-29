@@ -10,6 +10,9 @@ const shop = [
 ];
 
 const help = [
+  { label: "About us", href: "/about" },
+  { label: "Contact us", href: "/contact" },
+  { label: "FAQ", href: "/faq" },
   { label: "Track an order", href: "/order-tracking" },
   { label: "My orders", href: "/orders" },
   { label: "How delivery works", href: "/#how-it-works" },
@@ -59,7 +62,11 @@ export function Footer() {
 
         <div className="mt-12 flex flex-col gap-2 border-t border-white/10 pt-6 text-xs text-[#8aa595] sm:flex-row sm:justify-between">
           <p>&copy; {new Date().getFullYear()} Everything Fresh. All rights reserved.</p>
-          <p>Payments secured by Paystack</p>
+          <p className="flex flex-wrap gap-x-5 gap-y-1">
+            <Link href="/terms" className="hover:text-white">Terms</Link>
+            <Link href="/privacy" className="hover:text-white">Privacy</Link>
+            <span>Payments secured by Paystack</span>
+          </p>
         </div>
       </div>
     </footer>

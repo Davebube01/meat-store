@@ -78,6 +78,20 @@ export function Header() {
                 >
                   {ordersLink.label}
                 </Link>
+                <Link
+                  href="/faq"
+                  className="text-lg font-medium hover:text-[#3f7a55] transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  FAQ
+                </Link>
+                <Link
+                  href="/contact"
+                  className="text-lg font-medium hover:text-[#3f7a55] transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Contact
+                </Link>
               </nav>
             </SheetContent>
           </Sheet>
@@ -109,6 +123,18 @@ export function Header() {
               className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
             >
               {ordersLink.label}
+            </Link>
+            <Link
+              href="/faq"
+              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            >
+              FAQ
+            </Link>
+            <Link
+              href="/contact"
+              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            >
+              Contact
             </Link>
           </nav>
 

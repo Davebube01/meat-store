@@ -9,6 +9,9 @@ export interface StoreInfo {
   address: string | null;
   pickup_address: string | null;
   pickup_instructions: string | null;
+  /** About page text; null = show the default wording. */
+  about_headline: string | null;
+  about_story: string | null;
 }
 
 export const getStoreInfo = async (): Promise<StoreInfo> => fetchClient<StoreInfo>("/api/v1/store");

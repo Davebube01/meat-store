@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { logout } from "@/core/auth/logout";
 import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getAdminMessages } from "@/core/api/admin/messages";
 import { ADMIN_ROUTES } from "@/core/constants/routes";
 import { useAdminCan } from "@/core/store/useAdminCan";
 
@@ -20,6 +22,14 @@ interface AdminSidebarProps {
 export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
   const can = useAdminCan();
   const pathname = usePathname();
+  // Unread Contact-page messages, for the badge on Messages.
+  const newMessages = useQuery({
+    queryKey: ["admin-messages-new"],
+    queryFn: () => getAdminMessages({ status: "new", limit: 1 }),
+    enabled: can("messages"),
+    refetchInterval: 60_000,
+    select: (d) => d.new_count,
+  }).data ?? 0;
 
   // Close sidebar on navigation (mobile)
   useEffect(() => {
@@ -73,6 +83,11 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
               >
                 <route.icon className={`w-5 h-5 mr-3 transition-colors ${isActive ? "text-green-700" : "group-hover:text-green-600"}`} />
                 {route.label}
+                {route.href === "/admin/messages" && newMessages > 0 && (
+                  <span className="ml-auto rounded-full bg-[#22c55e] px-2 py-0.5 text-xs font-semibold tabular-nums text-white" aria-label={`${newMessages} new`}>
+                    {newMessages > 99 ? "99+" : newMessages}
+                  </span>
+                )}
               </Link>
             )
           })}

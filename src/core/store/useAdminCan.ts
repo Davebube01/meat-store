@@ -9,7 +9,8 @@ export type AdminPermission =
   | "dashboard" | "products.view" | "products.edit" | "stock.adjust" | "costs.view" | "inventory.view"
   | "orders.view" | "orders.manage" | "orders.cancel" | "sales.create" | "sales.view" | "sales.void"
   | "customers.view" | "customers.manage" | "exports" | "activity.view" | "settings.manage" | "staff.manage"
-  | "notifications";
+  | "notifications"
+  | "messages";
 
 export const hasPermission = (permissions: string[] | undefined, permission?: AdminPermission) =>
   !permission || !!permissions?.includes(permission);
