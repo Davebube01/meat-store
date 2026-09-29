@@ -57,3 +57,14 @@ export const setMyDefaultAddress = async (id: string) =>
 
 export const deleteMyAddress = async (id: string) =>
   fetchClient<void>(`/api/v1/account/addresses/${id}`, { method: "DELETE" });
+
+/** Always succeeds (it never says whether the email has an account). */
+export const requestPasswordReset = async (email: string) =>
+  fetchClient<{ sent: boolean }>("/api/v1/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) });
+
+export const resetPassword = async (token: string, new_password: string) =>
+  fetchClient<{ ok: boolean }>("/api/v1/auth/reset-password", { method: "POST", body: JSON.stringify({ token, new_password }) });
+
+/** Send a new confirmation link without signing in. Always succeeds (never says if the email exists). */
+export const resendVerificationByEmail = async (email: string) =>
+  fetchClient<{ sent: boolean }>("/api/v1/auth/resend-verification-public", { method: "POST", body: JSON.stringify({ email }) });

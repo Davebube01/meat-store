@@ -37,8 +37,8 @@ export function EmailVerificationBanner() {
       await resendVerificationEmail();
       setSent(true);
       toast.success(`Confirmation link sent to ${user.email}.`);
-    } catch (err: any) {
-      toast.error(err?.status === 429 ? "You've requested a lot of emails. Please try again later." : "Couldn't send the email. Please try again.");
+    } catch (err) {
+      toast.error((err as { status?: number })?.status === 429 ? "You've requested a lot of emails. Please try again later." : "Couldn't send the email. Please try again.");
     } finally {
       setSending(false);
     }
@@ -48,7 +48,9 @@ export function EmailVerificationBanner() {
     setDismissed(true);
     try {
       sessionStorage.setItem(DISMISSED_KEY, "1");
-    } catch {}
+    } catch {
+      // storage blocked: it just shows again next visit
+    }
   };
 
   return (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { toast } from "react-toastify";
 import { AlertCircle, Eye, EyeOff, Loader2, Lock, Mail, Phone, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,10 @@ interface AuthFormProps {
   defaultTab?: AuthTab;
   initialEmail?: string;
   onSuccess: () => void;
+  /** Sign in / Create account switch. Full pages link between routes instead. */
+  showTabs?: boolean;
+  /** Called with the other tab when the form wants to switch (e.g. "Sign in instead"). */
+  onSwitch?: (tab: AuthTab) => void;
 }
 
 type Fields = { fullName: string; email: string; phone: string; password: string };
@@ -30,20 +35,21 @@ type FieldErrors = Partial<Record<keyof Fields, string>>;
 
 const STRENGTH_COLORS = ["bg-red-500", "bg-red-500", "bg-amber-500", "bg-lime-500", "bg-green-600"];
 
-function describeError(err: any): string {
-  const status = err?.status;
+function describeError(err: unknown): string {
+  const e = err as { status?: number; message?: string } | null;
+  const status = e?.status ?? 0;
   if (status === 401) return "Incorrect email or password.";
   if (status === 409) return "An account with this email already exists.";
   if (status === 429) return "Too many attempts. Please wait a few minutes and try again.";
-  if (status === 400 && /inactive/i.test(err?.message ?? "")) {
+  if (status === 400 && /inactive/i.test(e?.message ?? "")) {
     return "This account has been deactivated. Please contact support.";
   }
   if (status >= 500) return "Something went wrong on our side. Please try again in a moment.";
   if (err instanceof TypeError) return "Can't reach the server. Check your connection and try again.";
-  return err?.message || "Something went wrong. Please try again.";
+  return e?.message || "Something went wrong. Please try again.";
 }
 
-export function AuthForm({ defaultTab = "login", initialEmail = "", onSuccess }: AuthFormProps) {
+export function AuthForm({ defaultTab = "login", initialEmail = "", onSuccess, showTabs = true, onSwitch }: AuthFormProps) {
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const [tab, setTab] = useState<AuthTab>(defaultTab);
@@ -64,6 +70,7 @@ export function AuthForm({ defaultTab = "login", initialEmail = "", onSuccess }:
   };
 
   const switchTab = (next: AuthTab) => {
+    if (onSwitch) return onSwitch(next);
     setTab(next);
     setErrors({});
     setFormError(null);
@@ -119,18 +126,19 @@ export function AuthForm({ defaultTab = "login", initialEmail = "", onSuccess }:
       }
 
       onSuccess();
-    } catch (err: any) {
-      setFormError({ message: describeError(err), emailTaken: err?.status === 409 });
+    } catch (err) {
+      setFormError({ message: describeError(err), emailTaken: (err as { status?: number })?.status === 409 });
     } finally {
       setLoading(false);
     }
   };
 
   const inputClass = (key: keyof Fields) =>
-    cn("pl-10 h-12", errors[key] && "border-red-500 focus-visible:ring-red-500/30");
+    cn("pl-10 h-12 rounded-xl", errors[key] && "border-red-500 focus-visible:ring-red-500/30");
 
   return (
     <div>
+      {showTabs && (
       <div role="tablist" aria-label="Account" className="grid grid-cols-2 bg-gray-100 rounded-lg p-1 mb-6">
         {(["login", "register"] as const).map((t) => (
           <button
@@ -141,13 +149,14 @@ export function AuthForm({ defaultTab = "login", initialEmail = "", onSuccess }:
             onClick={() => switchTab(t)}
             className={cn(
               "py-2 rounded-md text-sm font-semibold transition-all",
-              tab === t ? "bg-white shadow-sm text-green-800" : "text-gray-500 hover:text-gray-700"
+              tab === t ? "bg-white shadow-sm text-[#2d583d]" : "text-gray-500 hover:text-gray-700"
             )}
           >
             {t === "login" ? "Sign In" : "Create Account"}
           </button>
         ))}
       </div>
+      )}
 
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
         {isRegister && (
@@ -212,7 +221,14 @@ export function AuthForm({ defaultTab = "login", initialEmail = "", onSuccess }:
         )}
 
         <div className="grid gap-1.5">
-          <Label htmlFor="auth-password">Password</Label>
+          <div className="flex items-baseline justify-between">
+            <Label htmlFor="auth-password">Password</Label>
+            {!isRegister && (
+              <Link href="/forgot-password" className="text-xs font-semibold text-[#3f7a55] hover:underline">
+                Forgot password?
+              </Link>
+            )}
+          </div>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
@@ -262,7 +278,7 @@ export function AuthForm({ defaultTab = "login", initialEmail = "", onSuccess }:
               type="checkbox"
               checked={remember}
               onChange={(e) => setRemember(e.target.checked)}
-              className="w-4 h-4 text-green-700 border-gray-300 rounded cursor-pointer"
+              className="h-4 w-4 cursor-pointer rounded border-gray-300 accent-[#3f7a55]"
             />
             Keep me signed in
           </label>
@@ -292,12 +308,18 @@ export function AuthForm({ defaultTab = "login", initialEmail = "", onSuccess }:
           </div>
         )}
 
+        {isRegister && (
+          <p className="text-xs text-gray-500">
+            By creating an account you agree to our terms and privacy policy. We&apos;ll send a link to confirm your email.
+          </p>
+        )}
+
         <Button
           type="submit"
           disabled={loading}
-          className="w-full h-11 bg-green-700 hover:bg-green-800 text-white font-bold"
+          className="h-12 w-full rounded-xl bg-[#3f7a55] text-base font-semibold text-white hover:bg-[#2d583d]"
         >
-          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : isRegister ? "Create Account" : "Sign In"}
+          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : isRegister ? "Create account" : "Sign in"}
         </Button>
       </form>
     </div>

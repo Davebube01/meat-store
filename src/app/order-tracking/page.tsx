@@ -68,12 +68,15 @@ function Tracking() {
   const [recent, setRecent] = useState<Recent[]>(() => (typeof window === "undefined" ? [] : readRecent()));
 
   // Signed-in customers have their own order pages; this lookup is for guests.
+  // Subscribed, not read once: signing in while this page is open (or the
+  // saved session loading a moment after it) must still move them along.
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   useEffect(() => {
-    if (useAuthStore.getState().isAuthenticated) {
+    if (isAuthenticated) {
       const id = params.get("id");
       router.replace(id ? `/orders/${encodeURIComponent(id)}` : "/orders");
     }
-  }, [params, router]);
+  }, [isAuthenticated, params, router]);
 
   // Links from checkout carry the email: use it, then drop it from the address bar.
   useEffect(() => {

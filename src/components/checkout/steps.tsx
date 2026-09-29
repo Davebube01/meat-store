@@ -11,6 +11,7 @@ import { SignInModal } from "@/components/SignInModal";
 import { cn } from "@/lib/utils";
 import type { DeliveryZone } from "@/core/api/user/delivery";
 import type { StoreInfo } from "@/core/api/user/store";
+import type { SavedAddress } from "@/core/api/user/account";
 import { bookingDates, dayLabel, hasOpenSlot, longDate, slotsFor } from "./slots";
 
 const naira = (n: number) => `₦${Math.round(n).toLocaleString("en-NG")}`;
@@ -174,15 +175,30 @@ export interface DeliveryValues {
   timeSlot: string;
 }
 
-export function DeliveryStep({ initial, zones, zonesError, store, onBack, onSubmit }: {
+export function DeliveryStep({ initial, zones, zonesError, store, saved = [], onBack, onSubmit }: {
   initial: DeliveryValues;
   zones: DeliveryZone[] | undefined;
   zonesError: boolean;
   store: StoreInfo | undefined;
+  /** Signed-in customer's saved addresses (only ones we still deliver to). */
+  saved?: SavedAddress[];
   onBack: () => void;
   onSubmit: (v: DeliveryValues) => void;
 }) {
-  const [v, setV] = useState<DeliveryValues>(initial);
+  const usable = saved.filter((a) => a.zone_fee !== null);
+  const fromSaved = (a: SavedAddress): Partial<DeliveryValues> => ({
+    deliveryZone: a.zone_id,
+    deliveryFee: a.zone_fee ?? 0,
+    address: a.address,
+    apartment: a.apartment ?? "",
+    landmark: a.landmark ?? "",
+    instructions: a.instructions ?? "",
+  });
+  // Nothing typed yet: start from the default saved address.
+  const [v, setV] = useState<DeliveryValues>(() => {
+    const def = usable.find((a) => a.is_default);
+    return def && !initial.address ? { ...initial, ...fromSaved(def) } : initial;
+  });
   const [tried, setTried] = useState(false);
   const dates = useMemo(() => bookingDates(), []);
   const slots = slotsFor(v.deliveryDate);
@@ -255,6 +271,35 @@ export function DeliveryStep({ initial, zones, zonesError, store, onBack, onSubm
 
       {delivery ? (
         <>
+          {usable.length > 0 && (
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-semibold text-gray-900">Your saved addresses</legend>
+              <div className="flex flex-wrap gap-2">
+                {usable.map((a) => {
+                  const on = v.address === a.address && v.deliveryZone === a.zone_id;
+                  return (
+                    <button
+                      key={a.id}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => set(fromSaved(a))}
+                      className={cn(
+                        "flex max-w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
+                        on ? "border-[#3f7a55] bg-[#f4f7f5] ring-1 ring-[#3f7a55]" : "border-gray-200 hover:border-gray-300",
+                      )}
+                    >
+                      <MapPin className={cn("h-4 w-4 shrink-0", on ? "text-[#3f7a55]" : "text-gray-400")} />
+                      <span className="min-w-0">
+                        <span className="block font-medium text-gray-900">{a.label}</span>
+                        <span className="block max-w-[220px] truncate text-xs text-gray-500">{a.address}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+          )}
+
           {/* Zone */}
           <fieldset className="space-y-3">
             <legend className="text-sm font-semibold text-gray-900">Your area</legend>

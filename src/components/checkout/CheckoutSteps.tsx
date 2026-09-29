@@ -13,6 +13,7 @@ import { checkoutOrder } from "@/core/api/user/orders";
 import { initializePayment, simulateWebhook } from "@/core/api/user/payments";
 import { getDeliveryZones } from "@/core/api/user/delivery";
 import { getStoreInfo } from "@/core/api/user/store";
+import { getMyAddresses } from "@/core/api/user/account";
 import { ContactStep, DeliveryStep, ReviewStep, StepCard, type DeliveryValues, type PaymentChoice } from "./steps";
 import { longDate } from "./slots";
 
@@ -36,6 +37,7 @@ export function CheckoutSteps() {
 
   const zones = useQuery({ queryKey: ["delivery-zones"], queryFn: getDeliveryZones, staleTime: 5 * 60_000 });
   const store = useQuery({ queryKey: ["store-info"], queryFn: getStoreInfo, staleTime: 10 * 60_000 });
+  const saved = useQuery({ queryKey: ["my-addresses"], queryFn: getMyAddresses, enabled: isAuthenticated });
 
   // Only Paystack and cash are real options (an older build also offered
   // Flutterwave, which silently went through Paystack anyway).
@@ -178,6 +180,7 @@ export function CheckoutSteps() {
           zones={zones.data}
           zonesError={zones.isError}
           store={store.data}
+          saved={saved.data}
           onBack={() => setStep(1)}
           onSubmit={(v) => {
             setDeliveryMethod(v.method);
