@@ -55,7 +55,7 @@ export default function AccountPage() {
         </p>
         {!push.supported && push.ready ? (
           <p className="mt-3 text-sm text-gray-500">
-            Not supported in this browser. Install MeatStore Admin to your home screen first, or use Chrome/Edge.
+            Not supported in this browser. Install Everything Fresh Admin to your home screen first, or use Chrome/Edge.
           </p>
         ) : (
           <Button

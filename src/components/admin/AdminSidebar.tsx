@@ -56,7 +56,7 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
             <div className="w-10 h-10 rounded-xl bg-linear-to-br from-green-500 to-green-700 flex items-center justify-center shadow-lg shadow-green-500/30">
               <Store className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-xl font-bold tracking-tight text-gray-900">MeatStore</h1>
+            <h1 className="text-lg font-bold tracking-tight text-gray-900">Everything Fresh</h1>
           </div>
           <button 
             onClick={() => setIsOpen(false)}

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { DropdownSelect } from "@/components/ui/dropdown-select";
 import { ImagePlus, Link2, X, Upload, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { toast } from "react-toastify";
@@ -253,17 +254,13 @@ export function ProductForm({ initialData }: ProductFormProps) {
         </div>
         <div className="grid gap-2">
           <Label htmlFor="category" className="text-sm font-medium text-gray-700">Category</Label>
-          <select
+          <DropdownSelect
             id="category"
-            name="category"
-            value={formData.category}
-            onChange={(e) => handleCategoryChange(e.target.value)}
-            className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3f7a55]/20 focus:border-[#3f7a55] transition-all"
-          >
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.slug}>{cat.name}</option>
-            ))}
-          </select>
+            value={formData.category ?? ""}
+            onValueChange={handleCategoryChange}
+            className="h-10"
+            options={categories.map((cat) => ({ value: cat.slug, label: cat.name }))}
+          />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="stock_quantity" className="text-sm font-medium text-gray-700">

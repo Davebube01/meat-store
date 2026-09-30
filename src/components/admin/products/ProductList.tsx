@@ -3,10 +3,11 @@
 import { useMemo, useState } from "react";
 import { Product, deleteAdminProduct } from "@/core/api";
 import { API_BASE_URL } from "@/core/api/client";
-import { Edit, Trash2, Search, ChevronDown, Eye } from "lucide-react";
+import { Edit, Trash2, Search, Eye } from "lucide-react";
 import Link from "next/link";
 import { useAdminCan } from "@/core/store/useAdminCan";
 import Image from "next/image";
+import { DropdownSelect } from "@/components/ui/dropdown-select";
 
 // Fallback only if the API didn't send one; the store default lives in Settings.
 const DEFAULT_LOW_STOCK_THRESHOLD = 5;
@@ -21,6 +22,7 @@ interface ProductListProps {
 
 export function ProductList({ products, onRefresh }: ProductListProps) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const can = useAdminCan();
 
   // Search and Category above are still decorative — not part of this pass,
@@ -68,29 +70,29 @@ export function ProductList({ products, onRefresh }: ProductListProps) {
         </div>
         
         <div className="flex flex-col sm:flex-row w-full md:w-auto gap-3 sm:gap-4">
-          <div className="relative w-full sm:w-48">
-            <select className="w-full appearance-none pl-4 pr-10 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3f7a55]/20 focus:border-[#3f7a55] transition-all text-sm bg-white text-gray-700 cursor-pointer">
-              <option>All Categories</option>
-              <option>Full Goat</option>
-              <option>Parts</option>
-              <option>Per Kg</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-          </div>
+          <DropdownSelect
+            value={categoryFilter}
+            onValueChange={setCategoryFilter}
+            className="w-full sm:w-48"
+            options={[
+              { value: "all", label: "All Categories" },
+              { value: "full-goat", label: "Full Goat" },
+              { value: "parts", label: "Parts" },
+              { value: "per-kg", label: "Per Kg" },
+            ]}
+          />
 
-          <div className="relative w-full sm:w-40">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-              className="w-full appearance-none pl-4 pr-10 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3f7a55]/20 focus:border-[#3f7a55] transition-all text-sm bg-white text-gray-700 cursor-pointer"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="low_stock">Low Stock</option>
-              <option value="draft">Draft</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-          </div>
+          <DropdownSelect
+            value={statusFilter}
+            onValueChange={(v) => setStatusFilter(v as StatusFilter)}
+            className="w-full sm:w-40"
+            options={[
+              { value: "all", label: "All Status" },
+              { value: "active", label: "Active" },
+              { value: "low_stock", label: "Low Stock" },
+              { value: "draft", label: "Draft" },
+            ]}
+          />
 
           <button className="w-full sm:w-auto bg-[#3f7a55] hover:bg-[#2d583d] text-white px-8 py-2 rounded-lg font-medium transition-colors text-sm whitespace-nowrap">
             Filter

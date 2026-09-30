@@ -6,6 +6,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import { AlertCircle, AlertTriangle, FileDown, Loader2, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DropdownSelect } from "@/components/ui/dropdown-select";
 import { ActivityItem } from "@/components/admin/activity/ActivityItem";
 import { RANGES, TYPES, dayLabel, rangeDates, type RangeKey } from "@/components/admin/activity/format";
 import { downloadExport, getActivity, getActivitySummary, type ActivityEntityType, type ActivityEntry } from "@/core/api";
@@ -128,19 +129,24 @@ function ActivityLog() {
               className="h-10 w-full rounded-xl border border-gray-200 pl-9 pr-3 text-sm outline-none focus:border-[#3f7a55] [&::-webkit-search-cancel-button]:hidden"
             />
           </div>
-          <select aria-label="Person" value={actor ?? ""} onChange={(e) => setParams({ actor: e.target.value || null })} className={selectClass}>
-            <option value="">Everyone</option>
-            {actor && !actorName && <option value={actor}>Selected person</option>}
-            {s?.actors.map((a) => <option key={a.id} value={a.id}>{a.name} ({a.count})</option>)}
-          </select>
-          <select
+          <DropdownSelect
+            aria-label="Person"
+            value={actor ?? ""}
+            onValueChange={(v) => setParams({ actor: v || null })}
+            className={selectClass}
+            options={[
+              { value: "", label: "Everyone" },
+              ...(actor && !actorName ? [{ value: actor, label: "Selected person" }] : []),
+              ...(s?.actors.map((a) => ({ value: a.id, label: `${a.name} (${a.count})` })) ?? []),
+            ]}
+          />
+          <DropdownSelect
             aria-label="When"
             value={range}
-            onChange={(e) => setParams({ range: e.target.value === "all" ? null : e.target.value, ...(e.target.value !== "custom" && { from: null, to: null }) })}
+            onValueChange={(v) => setParams({ range: v === "all" ? null : v, ...(v !== "custom" && { from: null, to: null }) })}
             className={selectClass}
-          >
-            {RANGES.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}
-          </select>
+            options={RANGES.map((r) => ({ value: r.key, label: r.label }))}
+          />
           {range === "custom" && (
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <input type="date" aria-label="From" value={from} max={to || undefined} onChange={(e) => setParams({ from: e.target.value })} className={selectClass} />

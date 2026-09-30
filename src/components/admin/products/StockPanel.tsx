@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { DropdownSelect } from "@/components/ui/dropdown-select";
 import { Boxes, Loader2, Plus, Minus } from "lucide-react";
 import { toast } from "react-toastify";
 import { cn } from "@/lib/utils";
@@ -127,15 +128,16 @@ export function StockPanel({ product, onProductChange }: StockPanelProps) {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="reason">Reason</Label>
-              <select
+              <DropdownSelect
                 id="reason"
                 value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3f7a55]/20 focus:border-[#3f7a55] transition-all"
-              >
-                <option value="restock">Restock</option>
-                <option value="correction">Correction</option>
-              </select>
+                onValueChange={setReason}
+                className="h-10"
+                options={[
+                  { value: "restock", label: "Restock" },
+                  { value: "correction", label: "Correction" },
+                ]}
+              />
             </div>
           </div>
 

@@ -18,10 +18,10 @@ self.addEventListener("push", (event) => {
   try {
     payload = event.data.json();
   } catch {
-    payload = { title: "MeatStore Admin", body: event.data.text() };
+    payload = { title: "Everything Fresh Admin", body: event.data.text() };
   }
 
-  const { title = "MeatStore Admin", body, link = "/admin/dashboard", tag, icon } = payload;
+  const { title = "Everything Fresh Admin", body, link = "/admin/dashboard", tag, icon } = payload;
 
   event.waitUntil(
     self.registration.showNotification(title, {

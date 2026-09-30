@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Inbox, MessageSquareReply, Search, X } from "lucide-react";
+import { DropdownSelect } from "@/components/ui/dropdown-select";
 import { MessageDetail } from "@/components/admin/messages/MessageDetail";
 import { TOPIC_LABELS, TOPIC_STYLES, shortWhen } from "@/components/admin/messages/format";
 import {
@@ -89,15 +90,16 @@ function MessagesInbox() {
             </button>
           ))}
         </div>
-        <select
+        <DropdownSelect
           aria-label="Topic"
           value={topic}
-          onChange={(e) => setTopic(e.target.value as MessageTopic | "")}
-          className="h-10 rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-700"
-        >
-          <option value="">All topics</option>
-          {(Object.keys(TOPIC_LABELS) as MessageTopic[]).map((k) => <option key={k} value={k}>{TOPIC_LABELS[k]}</option>)}
-        </select>
+          onValueChange={(v) => setTopic(v as MessageTopic | "")}
+          className="h-10 w-auto rounded-xl"
+          options={[
+            { value: "", label: "All topics" },
+            ...(Object.keys(TOPIC_LABELS) as MessageTopic[]).map((k) => ({ value: k, label: TOPIC_LABELS[k] })),
+          ]}
+        />
         <div className="relative md:ml-auto md:w-72">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input

@@ -8,9 +8,9 @@ import { NextResponse } from "next/server";
 export function GET() {
   return NextResponse.json(
     {
-      name: "MeatStore Admin",
-      short_name: "MeatStore Admin",
-      description: "Manage orders, stock and sales for MeatStore.",
+      name: "Everything Fresh Admin",
+      short_name: "EF Admin",
+      description: "Manage orders, stock and sales for Everything Fresh.",
       // Relative to this manifest's own URL (/admin/...), so these resolve
       // under /admin/ regardless of host.
       start_url: "/admin/dashboard",

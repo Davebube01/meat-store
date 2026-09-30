@@ -5,6 +5,7 @@ import { ArrowDown, ArrowUp, Eye, EyeOff, Loader2, Plus, Trash2 } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { DropdownSelect } from "@/components/ui/dropdown-select";
 import { FAQ_SECTIONS, type Faq, type FaqSection } from "@/core/api/user/faq";
 import type { FaqInput } from "@/core/api/admin/faqs";
 import { cn } from "@/lib/utils";
@@ -109,14 +110,13 @@ export function FaqEditor({ initial, isDefault, saving, error, onSave }: Props) 
                         aria-invalid={tried && r.answer.trim().length < 5}
                       />
                       <div className="flex flex-wrap items-center gap-3">
-                        <select
+                        <DropdownSelect
                           aria-label="Section"
                           value={r.section}
-                          onChange={(e) => update(r.key, { section: e.target.value as FaqSection })}
-                          className="h-8 rounded-lg border border-gray-200 bg-white px-2 text-sm text-gray-700"
-                        >
-                          {FAQ_SECTIONS.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
-                        </select>
+                          onValueChange={(v) => update(r.key, { section: v as FaqSection })}
+                          className="h-8 w-auto rounded-lg"
+                          options={FAQ_SECTIONS.map((o) => ({ value: o.key, label: o.label }))}
+                        />
                         {tried && invalid(r) && <span className="text-xs text-red-600">Question and answer need at least 5 characters.</span>}
                       </div>
                     </div>

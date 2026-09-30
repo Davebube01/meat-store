@@ -7,6 +7,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { AlertCircle, BadgeCheck, Loader2, Repeat, Search, UserPlus, UserRound, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DropdownSelect } from "@/components/ui/dropdown-select";
 import { getCustomers, getCustomersSummary, type CustomerSort } from "@/core/api";
 
 const PAGE = 50;
@@ -107,34 +108,30 @@ export default function CustomersPage() {
             />
           </div>
           <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
-            <select
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value as typeof status);
-                setLimit(PAGE);
-              }}
+            <DropdownSelect
               aria-label="Account status"
-              className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm"
-            >
-              <option value="all">All accounts</option>
-              <option value="active">Active</option>
-              <option value="inactive">Deactivated</option>
-            </select>
-            <select
-              value={sort}
-              onChange={(e) => {
-                setSort(e.target.value as CustomerSort);
+              value={status}
+              onValueChange={(v) => {
+                setStatus(v as typeof status);
                 setLimit(PAGE);
               }}
+              className="w-auto"
+              options={[
+                { value: "all", label: "All accounts" },
+                { value: "active", label: "Active" },
+                { value: "inactive", label: "Deactivated" },
+              ]}
+            />
+            <DropdownSelect
               aria-label="Sort by"
-              className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm"
-            >
-              {SORTS.map((o) => (
-                <option key={o.key} value={o.key}>
-                  Sort: {o.label}
-                </option>
-              ))}
-            </select>
+              value={sort}
+              onValueChange={(v) => {
+                setSort(v as CustomerSort);
+                setLimit(PAGE);
+              }}
+              className="w-auto"
+              options={SORTS.map((o) => ({ value: o.key, label: `Sort: ${o.label}` }))}
+            />
           </div>
         </div>
 

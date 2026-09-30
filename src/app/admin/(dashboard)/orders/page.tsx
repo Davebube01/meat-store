@@ -7,6 +7,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { AlertCircle, Clock, Loader2, PackageSearch, RefreshCw, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DropdownSelect } from "@/components/ui/dropdown-select";
 import { getOrders, getOrdersSummary, type OrderListParams, type OrderView } from "@/core/api";
 import { getDeliveryZones } from "@/core/api/user/delivery";
 import { getStatusInfo, shortOrderId } from "@/lib/orderStatus";
@@ -155,17 +156,27 @@ export default function OrdersPage() {
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <select aria-label="Delivery method" value={method} onChange={(e) => reset(() => setMethod(e.target.value as typeof method))} className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm">
-              <option value="">Delivery &amp; pickup</option>
-              <option value="delivery">Delivery</option>
-              <option value="pickup">Pickup</option>
-            </select>
-            <select aria-label="Delivery zone" value={zone} onChange={(e) => reset(() => setZone(e.target.value))} className="h-9 max-w-[200px] rounded-lg border border-gray-200 bg-white px-3 text-sm">
-              <option value="">All zones</option>
-              {zones.data?.map((z) => (
-                <option key={z.id} value={z.id}>{z.name}</option>
-              ))}
-            </select>
+            <DropdownSelect
+              aria-label="Delivery method"
+              value={method}
+              onValueChange={(v) => reset(() => setMethod(v as typeof method))}
+              className="w-auto"
+              options={[
+                { value: "", label: "Delivery & pickup" },
+                { value: "delivery", label: "Delivery" },
+                { value: "pickup", label: "Pickup" },
+              ]}
+            />
+            <DropdownSelect
+              aria-label="Delivery zone"
+              value={zone}
+              onValueChange={(v) => reset(() => setZone(v))}
+              className="w-auto max-w-[200px]"
+              options={[
+                { value: "", label: "All zones" },
+                ...(zones.data?.map((z) => ({ value: z.id, label: z.name })) ?? []),
+              ]}
+            />
             <label className="flex items-center gap-1.5 text-sm text-gray-500">
               From
               <input type="date" value={dateFrom} max={dateTo || undefined} onChange={(e) => reset(() => setDateFrom(e.target.value))} className="h-9 rounded-lg border border-gray-200 px-2 text-sm text-gray-700" />

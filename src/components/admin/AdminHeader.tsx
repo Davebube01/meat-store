@@ -35,7 +35,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
           <h2 className="text-lg font-bold text-gray-900 tracking-tight">
             {capitalizedPath}
           </h2>
-          <p className="text-xs text-gray-400 font-medium">MeatStore / Admin / {capitalizedPath}</p>
+          <p className="text-xs text-gray-400 font-medium">Everything Fresh / Admin / {capitalizedPath}</p>
         </div>
       </div>
 

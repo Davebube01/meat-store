@@ -5,12 +5,12 @@ import type { Metadata, Viewport } from "next";
 // never see an install prompt. See manifest.webmanifest/route.ts for why
 // this isn't the special app/manifest.ts file convention.
 export const metadata: Metadata = {
-  title: "MeatStore Admin",
+  title: "Everything Fresh Admin",
   manifest: "/admin/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "MeatStore Admin",
+    title: "Everything Fresh Admin",
   },
 };
 
