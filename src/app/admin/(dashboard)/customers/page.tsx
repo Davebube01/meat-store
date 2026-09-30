@@ -157,7 +157,33 @@ export default function CustomersPage() {
             <p className="text-sm text-gray-500">{search ? `No customers match “${search}”` : "No customers yet"}</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          <ul className={`divide-y divide-gray-100 md:hidden ${list.isFetching ? "opacity-60" : ""}`}>
+            {rows.map((c) => (
+              <li key={c.id}>
+                <Link href={`/admin/customers/${c.id}`} className="flex items-center gap-3 px-4 py-3 active:bg-gray-50">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#dcebe1] text-xs font-semibold text-[#2d583d]">
+                    {initials(c.name)}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="truncate font-medium text-gray-900">{c.name}</span>
+                      {c.email_verified && <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-[#3f7a55]" aria-label="Email verified" />}
+                      {c.status === "inactive" && (
+                        <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-gray-500">Deactivated</span>
+                      )}
+                    </div>
+                    <p className="truncate text-xs text-gray-400">{c.phone || c.email}</p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="font-semibold tabular-nums text-gray-900">{naira(c.totalSpent)}</p>
+                    <p className="text-xs tabular-nums text-gray-400">{c.ordersCount} order{c.ordersCount === 1 ? "" : "s"}</p>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50/70 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">
@@ -214,6 +240,7 @@ export default function CustomersPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
 
         {hasMore && (

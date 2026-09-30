@@ -216,7 +216,48 @@ export default function OrdersPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          <ul className={`divide-y divide-gray-100 md:hidden ${list.isFetching ? "opacity-60" : ""}`}>
+            {rows.map((o) => {
+              const st = getStatusInfo(o);
+              const items = o.items.reduce((n: number, i: { quantity: number }) => n + i.quantity, 0);
+              const pickup = o.delivery_method === "pickup";
+              return (
+                <li key={o.id}>
+                  <Link href={`/admin/orders/${o.id}`} className={`block px-4 py-3 ${o.overdue ? "bg-red-50/50" : "active:bg-gray-50"}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-mono font-medium text-gray-900">{shortOrderId(o.id)}</p>
+                        <p className="text-xs text-gray-400">
+                          {when(o.created_at)} · {items} item{items === 1 ? "" : "s"}
+                        </p>
+                      </div>
+                      <p className="shrink-0 font-semibold tabular-nums text-gray-900">{naira(o.total_amount)}</p>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-gray-900">
+                          {o.customer_name}
+                          {o.is_guest && <span className="ml-1.5 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-gray-500">Guest</span>}
+                        </p>
+                        <p className="text-xs text-gray-400">{o.customer_phone ?? o.customer_email}</p>
+                      </div>
+                      <span className={`shrink-0 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold ${st.className}`}>{st.label}</span>
+                    </div>
+                    {!pickup && (
+                      <p className={`mt-1 truncate text-xs ${o.overdue ? "font-semibold text-red-600" : "text-gray-400"}`}>
+                        {o.delivery_zone_name ?? "Delivery"}
+                        {o.delivery?.time_slot && ` · ${slotDay(o.delivery.delivery_date)} · ${o.delivery.time_slot}`}
+                        {o.overdue && " · past slot"}
+                      </p>
+                    )}
+                    {o.payment_method === "cod" && <p className="mt-1 text-xs text-gray-400">Cash on delivery</p>}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50/70 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">
@@ -275,6 +316,7 @@ export default function OrdersPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
 
         {hasMore && (

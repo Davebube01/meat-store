@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ArrowDown, ArrowUp, Info, Loader2, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import type { AdminDeliveryZone, DeliveryZoneInput } from "@/core/api";
 
@@ -55,7 +56,47 @@ export function DeliveryZonesEditor({ initial, saving, error, onSave }: Props) {
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
-        <div className="overflow-x-auto">
+        <ul className="divide-y divide-gray-100 md:hidden">
+          {rows.map((r, i) => (
+            <li key={r.key} className={r.is_active ? "space-y-3 p-4" : "space-y-3 bg-gray-50/60 p-4"}>
+              <div className="flex items-center justify-between">
+                <div className="flex">
+                  <button type="button" aria-label={`Move ${r.name} up`} disabled={i === 0} onClick={() => move(i, -1)} className="rounded p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30">
+                    <ArrowUp className="h-4 w-4" />
+                  </button>
+                  <button type="button" aria-label={`Move ${r.name} down`} disabled={i === rows.length - 1} onClick={() => move(i, 1)} className="rounded p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30">
+                    <ArrowDown className="h-4 w-4" />
+                  </button>
+                </div>
+                {/* Saved zones are switched off instead, so past orders keep their area. */}
+                {!r.id && (
+                  <button type="button" aria-label="Remove new zone" onClick={() => setRows((rs) => rs.filter((x) => x.key !== r.key))} className="rounded p-1 text-gray-400 hover:text-red-600">
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor={`name-${r.key}`}>Zone</Label>
+                <Input id={`name-${r.key}`} value={r.name} maxLength={80} placeholder="e.g. Lugbe" onChange={(e) => update(r.key, { name: e.target.value })} className={r.is_active ? "" : "text-gray-500"} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-1.5">
+                  <Label htmlFor={`fee-${r.key}`}>Fee (₦)</Label>
+                  <Input id={`fee-${r.key}`} type="number" min={0} step={100} inputMode="numeric" value={r.fee} onChange={(e) => update(r.key, { fee: e.target.value })} className="tabular-nums" />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Active</Label>
+                  <div className="flex h-9 items-center gap-2">
+                    <Switch checked={r.is_active} onCheckedChange={(is_active) => update(r.key, { is_active })} aria-label={`${r.name} active`} />
+                    <span className="text-xs text-gray-500">{r.is_active ? "On" : "Off"}</span>
+                  </div>
+                </div>
+              </div>
+              {r.id && <p className="text-xs text-gray-500">{r.orders_count} order{r.orders_count === 1 ? "" : "s"} placed in this zone</p>}
+            </li>
+          ))}
+        </ul>
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50/70 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">

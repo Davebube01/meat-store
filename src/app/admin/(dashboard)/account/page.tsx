@@ -3,15 +3,17 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "react-toastify";
-import { Loader2 } from "lucide-react";
+import { Bell, BellOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { changeOwnPassword } from "@/core/api/admin/staff";
 import { useAdminAuthStore } from "@/core/store/useAdminAuthStore";
+import { useAdminPush } from "@/core/hooks/admin/usePush";
 
 export default function AccountPage() {
   const user = useAdminAuthStore((s) => s.user);
+  const push = useAdminPush();
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -42,6 +44,40 @@ export default function AccountPage() {
         <p className="mt-1 text-sm text-gray-500">
           {user?.email} · <span className="capitalize">{user?.role ?? "owner"}</span>
         </p>
+      </div>
+
+      <div className="rounded-2xl border border-gray-200 bg-white p-6">
+        <h2 className="text-sm font-semibold text-gray-900">Notifications</h2>
+        <p className="mt-1 text-sm text-gray-500">
+          {push.subscribed
+            ? "You'll get push notifications on this device for new orders, cancellations and stock alerts."
+            : "Get push notifications on this device for new orders, cancellations and stock alerts."}
+        </p>
+        {!push.supported && push.ready ? (
+          <p className="mt-3 text-sm text-gray-500">
+            Not supported in this browser. Install MeatStore Admin to your home screen first, or use Chrome/Edge.
+          </p>
+        ) : (
+          <Button
+            type="button"
+            variant={push.subscribed ? "outline" : "default"}
+            className={push.subscribed ? "mt-3" : "mt-3 bg-[#3f7a55] hover:bg-[#2d583d]"}
+            disabled={!push.ready || push.enable.isPending || push.disable.isPending}
+            onClick={() => (push.subscribed ? push.disable.mutate() : push.enable.mutate())}
+          >
+            {push.enable.isPending || push.disable.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : push.subscribed ? (
+              <>
+                <BellOff className="h-4 w-4" /> Turn off notifications
+              </>
+            ) : (
+              <>
+                <Bell className="h-4 w-4" /> Enable notifications
+              </>
+            )}
+          </Button>
+        )}
       </div>
 
       <form
