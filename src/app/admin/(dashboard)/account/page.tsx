@@ -25,6 +25,8 @@ export default function AccountPage() {
     mutationFn: () => changeOwnPassword(current, next),
     onSuccess: () => {
       toast.success("Password changed");
+      const { token, user: me, setAuth } = useAdminAuthStore.getState();
+      if (token && me) setAuth(token, { ...me, password_is_temporary: false });
       setCurrent("");
       setNext("");
       setConfirm("");

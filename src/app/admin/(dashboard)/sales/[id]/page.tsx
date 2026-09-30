@@ -152,6 +152,12 @@ export default function SaleReceiptPage() {
           )}
           <div className="flex justify-between text-base font-bold"><dt>Total</dt><dd className="tabular-nums">{naira(sale.total_amount)}</dd></div>
           <div className="flex justify-between text-xs text-gray-600"><dt>Paid by</dt><dd>{paidBy}</dd></div>
+          {sale.cash_tendered != null && (
+            <>
+              <div className="flex justify-between text-xs text-gray-600"><dt>Cash given</dt><dd className="tabular-nums">{naira(sale.cash_tendered)}</dd></div>
+              <div className="flex justify-between text-sm font-semibold"><dt>Change</dt><dd className="tabular-nums">{naira(sale.cash_tendered - sale.total_amount)}</dd></div>
+            </>
+          )}
         </dl>
 
         <p className="mt-4 text-center text-xs text-gray-500">Thank you!</p>

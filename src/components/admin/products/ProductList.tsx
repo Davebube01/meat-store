@@ -67,8 +67,8 @@ export function ProductList({ products, onRefresh }: ProductListProps) {
           />
         </div>
         
-        <div className="flex w-full md:w-auto gap-4">
-          <div className="relative w-full md:w-48">
+        <div className="flex flex-col sm:flex-row w-full md:w-auto gap-3 sm:gap-4">
+          <div className="relative w-full sm:w-48">
             <select className="w-full appearance-none pl-4 pr-10 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3f7a55]/20 focus:border-[#3f7a55] transition-all text-sm bg-white text-gray-700 cursor-pointer">
               <option>All Categories</option>
               <option>Full Goat</option>
@@ -77,8 +77,8 @@ export function ProductList({ products, onRefresh }: ProductListProps) {
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
           </div>
-          
-          <div className="relative w-full md:w-40">
+
+          <div className="relative w-full sm:w-40">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
@@ -92,112 +92,170 @@ export function ProductList({ products, onRefresh }: ProductListProps) {
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
           </div>
 
-          <button className="bg-[#3f7a55] hover:bg-[#2d583d] text-white px-8 py-2 rounded-lg font-medium transition-colors text-sm whitespace-nowrap">
+          <button className="w-full sm:w-auto bg-[#3f7a55] hover:bg-[#2d583d] text-white px-8 py-2 rounded-lg font-medium transition-colors text-sm whitespace-nowrap">
             Filter
           </button>
         </div>
       </div>
 
-      {/* Table Area */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-[0_2px_8px_rgb(0,0,0,0.04)] overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600">
-            <thead className="bg-[#f4f7f5] text-[#2d4d3a] text-xs uppercase font-bold tracking-wider border-b border-gray-200">
-              <tr>
-                <th scope="col" className="px-6 py-4 rounded-tl-xl w-[300px]">Product</th>
-                <th scope="col" className="px-6 py-4">Category</th>
-                <th scope="col" className="px-6 py-4">Price</th>
-                <th scope="col" className="px-6 py-4">Stock</th>
-                <th scope="col" className="px-6 py-4">Status</th>
-                <th scope="col" className="px-6 py-4 text-center rounded-tr-xl">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filteredProducts.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-6 py-4 align-middle">
-                    <div className="flex items-center gap-4">
-                      <div className="relative h-12 w-12 shrink-0 rounded-full overflow-hidden border border-gray-100 shadow-sm">
-                        <Image
-                          src={getFullImageUrl(product.image_url)}
-                          alt={product.name}
-                          fill
-                          unoptimized
-                          className="object-cover"
-                        />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-gray-700 text-sm whitespace-nowrap">
-                          {product.name}
-                        </span>
-                        <span className="text-xs text-gray-500 line-clamp-1 max-w-[200px]">
-                          {product.description || "Fresh selection"}
-                        </span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize">
-                    {product.category}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-700">
-                    ₦{product.price.toLocaleString()}
-                  </td>
+      {/* Empty state, shared by both layouts */}
+      {filteredProducts.length === 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-[0_2px_8px_rgb(0,0,0,0.04)] px-6 py-8 text-center text-gray-500">
+          {products.length === 0
+            ? "No products found. Add your first product to get started!"
+            : "No products match this filter."}
+        </div>
+      )}
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <span className={isLow(product) ? "font-semibold text-red-600" : "text-gray-600"}>
-                      {product.stock_quantity}
+      {/* Cards — phones and small tablets (below md), where a 6-column table won't fit */}
+      {filteredProducts.length > 0 && (
+        <ul className="space-y-3 md:hidden">
+          {filteredProducts.map((product) => (
+            <li key={product.id} className="bg-white rounded-xl border border-gray-200 shadow-[0_2px_8px_rgb(0,0,0,0.04)] p-4">
+              <div className="flex items-start gap-3">
+                <div className="relative h-12 w-12 shrink-0 rounded-full overflow-hidden border border-gray-100 shadow-sm">
+                  <Image src={getFullImageUrl(product.image_url)} alt={product.name} fill unoptimized className="object-cover" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="font-bold text-gray-700 text-sm">{product.name}</span>
+                    <span className="shrink-0 font-bold text-gray-700 text-sm">₦{product.price.toLocaleString()}</span>
+                  </div>
+                  <p className="text-xs text-gray-500 line-clamp-1">{product.description || "Fresh selection"}</p>
+
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <span className="text-xs text-gray-500 capitalize">{product.category}</span>
+                    <span className="text-gray-300">&middot;</span>
+                    <span className={isLow(product) ? "text-xs font-semibold text-red-600" : "text-xs text-gray-600"}>
+                      {product.stock_quantity} in stock
                     </span>
                     {isLow(product) && (
-                      <span className="ml-1.5 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-600 bg-red-50">
+                      <span className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-600 bg-red-50">
                         Low
                       </span>
                     )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold ${product.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold ${product.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+                    >
                       {product.is_active ? "Active" : "Inactive"}
                     </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-center gap-3">
-                      {can("products.edit") && <Link
-                        href={`/admin/products/${product.slug}/edit`}
-                        className="text-[#3f7a55] hover:text-[#2d583d] transition-colors"
-                        title="Edit Product"
-                      >
-                        <Edit className="h-4 w-4" strokeWidth={2.5} />
-                      </Link>}
-                      <Link
-                        href={`/admin/products/${product.slug}`}
-                        className="text-[#3f7a55] hover:text-[#2d583d] transition-colors"
-                        title="View Product"
-                      >
-                        <Eye className="h-4 w-4" strokeWidth={2.5} />
-                      </Link>
-                      {can("products.edit") && <button
-                        onClick={() => handleDelete(product.id)}
-                        className="text-red-500 hover:text-red-700 transition-colors"
-                        title="Delete Product"
-                      >
-                        <Trash2 className="h-4 w-4" strokeWidth={2.5} />
-                      </button>}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {filteredProducts.length === 0 && (
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center justify-end gap-4 border-t border-gray-100 pt-3">
+                {can("products.edit") && (
+                  <Link href={`/admin/products/${product.slug}/edit`} className="flex items-center gap-1.5 text-sm font-medium text-[#3f7a55]" title="Edit Product">
+                    <Edit className="h-4 w-4" strokeWidth={2.5} /> Edit
+                  </Link>
+                )}
+                <Link href={`/admin/products/${product.slug}`} className="flex items-center gap-1.5 text-sm font-medium text-[#3f7a55]" title="View Product">
+                  <Eye className="h-4 w-4" strokeWidth={2.5} /> View
+                </Link>
+                {can("products.edit") && (
+                  <button onClick={() => handleDelete(product.id)} className="flex items-center gap-1.5 text-sm font-medium text-red-500" title="Delete Product">
+                    <Trash2 className="h-4 w-4" strokeWidth={2.5} /> Delete
+                  </button>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Table — md and up */}
+      {filteredProducts.length > 0 && (
+        <div className="hidden md:block bg-white rounded-xl border border-gray-200 shadow-[0_2px_8px_rgb(0,0,0,0.04)] overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-gray-600">
+              <thead className="bg-[#f4f7f5] text-[#2d4d3a] text-xs uppercase font-bold tracking-wider border-b border-gray-200">
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                    {products.length === 0
-                      ? "No products found. Add your first product to get started!"
-                      : "No products match this filter."}
-                  </td>
+                  <th scope="col" className="px-6 py-4 rounded-tl-xl w-[300px]">Product</th>
+                  <th scope="col" className="px-6 py-4">Category</th>
+                  <th scope="col" className="px-6 py-4">Price</th>
+                  <th scope="col" className="px-6 py-4">Stock</th>
+                  <th scope="col" className="px-6 py-4">Status</th>
+                  <th scope="col" className="px-6 py-4 text-center rounded-tr-xl">Actions</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filteredProducts.map((product) => (
+                  <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="px-6 py-4 align-middle">
+                      <div className="flex items-center gap-4">
+                        <div className="relative h-12 w-12 shrink-0 rounded-full overflow-hidden border border-gray-100 shadow-sm">
+                          <Image
+                            src={getFullImageUrl(product.image_url)}
+                            alt={product.name}
+                            fill
+                            unoptimized
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-gray-700 text-sm whitespace-nowrap">
+                            {product.name}
+                          </span>
+                          <span className="text-xs text-gray-500 line-clamp-1 max-w-[200px]">
+                            {product.description || "Fresh selection"}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize">
+                      {product.category}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-700">
+                      ₦{product.price.toLocaleString()}
+                    </td>
+
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span className={isLow(product) ? "font-semibold text-red-600" : "text-gray-600"}>
+                        {product.stock_quantity}
+                      </span>
+                      {isLow(product) && (
+                        <span className="ml-1.5 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-600 bg-red-50">
+                          Low
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold ${product.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                        {product.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-3">
+                        {can("products.edit") && <Link
+                          href={`/admin/products/${product.slug}/edit`}
+                          className="text-[#3f7a55] hover:text-[#2d583d] transition-colors"
+                          title="Edit Product"
+                        >
+                          <Edit className="h-4 w-4" strokeWidth={2.5} />
+                        </Link>}
+                        <Link
+                          href={`/admin/products/${product.slug}`}
+                          className="text-[#3f7a55] hover:text-[#2d583d] transition-colors"
+                          title="View Product"
+                        >
+                          <Eye className="h-4 w-4" strokeWidth={2.5} />
+                        </Link>
+                        {can("products.edit") && <button
+                          onClick={() => handleDelete(product.id)}
+                          className="text-red-500 hover:text-red-700 transition-colors"
+                          title="Delete Product"
+                        >
+                          <Trash2 className="h-4 w-4" strokeWidth={2.5} />
+                        </button>}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -11,7 +11,7 @@ import { adminLandingPath, permissionForPath } from "@/core/constants/routes";
 import { hasPermission } from "@/core/store/useAdminCan";
 
 import { ToastContainer } from "react-toastify";
-import { Loader2, ShieldAlert } from "lucide-react";
+import { KeyRound, Loader2, ShieldAlert } from "lucide-react";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function AdminLayout({
@@ -23,6 +23,7 @@ export default function AdminLayout({
   const pathname = usePathname();
   const isAuthenticated = useAdminAuthStore((state) => state.isAuthenticated);
   const permissions = useAdminAuthStore((state) => state.user?.permissions);
+  const temporaryPassword = useAdminAuthStore((state) => !!state.user?.password_is_temporary);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
@@ -86,6 +87,15 @@ export default function AdminLayout({
         
         <main className="flex-1 p-4 lg:p-8">
           <div className="max-w-7xl mx-auto">
+            {temporaryPassword && pathname !== "/admin/account" && (
+              <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 sm:flex-row sm:items-center">
+                <KeyRound className="h-5 w-5 shrink-0 text-amber-600" />
+                <p className="flex-1">You&apos;re signed in with a password someone else set for you. Choose your own so only you know it.</p>
+                <Link href="/admin/account" className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg bg-amber-600 px-4 font-semibold text-white hover:bg-amber-700">
+                  Change password
+                </Link>
+              </div>
+            )}
             {allowed ? children : (
               <div className="mx-auto mt-16 max-w-md rounded-2xl border border-gray-200 bg-white p-8 text-center">
                 <ShieldAlert className="mx-auto h-10 w-10 text-amber-500" />

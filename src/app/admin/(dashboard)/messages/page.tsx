@@ -122,7 +122,7 @@ function MessagesInbox() {
           <button type="button" onClick={() => list.refetch()} className="font-semibold underline">Try again</button>
         </div>
       ) : (
-        <div className="grid min-h-[560px] grid-cols-1 overflow-hidden rounded-2xl border border-gray-200 bg-white lg:h-[calc(100vh-280px)] lg:grid-cols-[minmax(0,360px)_1fr]">
+        <div className="grid min-h-[560px] grid-cols-1 overflow-hidden rounded-2xl border border-gray-200 bg-white lg:h-[max(640px,calc(100vh-280px))] lg:grid-cols-[minmax(0,360px)_1fr]">
           {/* List: hidden on small screens while a message is open */}
           <ul className={cn("divide-y divide-gray-100 overflow-y-auto border-gray-200 lg:border-r", openId && "hidden lg:block")}>
             {list.isPending &&

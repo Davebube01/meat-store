@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import { AlertCircle, CreditCard, FileText, HelpCircle, Loader2, MapPin, Store } from "lucide-react";
@@ -33,6 +33,16 @@ export default function SettingsPage() {
   const [storeError, setStoreError] = useState<string | null>(null);
   const [zonesError, setZonesError] = useState<string | null>(null);
   const [faqError, setFaqError] = useState<string | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const pick = (key: Section, tab: HTMLElement) => {
+    setSection(key);
+    // Phones: bring the chosen tab into the scrollable row.
+    tab.scrollIntoView({ block: "nearest", inline: "nearest" });
+    // If you'd scrolled down the previous section, start the new one at its top.
+    const content = contentRef.current;
+    if (content && content.getBoundingClientRect().top < 0) content.scrollIntoView({ block: "start" });
+  };
 
   const { data, isPending, isError, error, refetch } = useQuery({ queryKey: QUERY_KEY, queryFn: getAdminSettings });
 
@@ -94,25 +104,30 @@ export default function SettingsPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-          <nav aria-label="Settings sections" className="flex gap-1 overflow-x-auto lg:flex-col">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-6">
+          {/* Stays in view while the section scrolls: a pinned row of tabs under
+              the header on phones (h-16), a pinned column on desktop (header lg:h-20). */}
+          <nav
+            aria-label="Settings sections"
+            className="sticky top-16 z-20 -mx-4 flex gap-1 overflow-x-auto scroll-px-4 border-b border-gray-100 bg-gray-50/95 px-4 py-2 backdrop-blur [scrollbar-width:none] lg:top-24 lg:mx-0 lg:flex-col lg:self-start lg:overflow-visible lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none"
+          >
             {SECTIONS.map((s) => (
               <button
                 key={s.key}
                 type="button"
                 aria-current={section === s.key ? "page" : undefined}
-                onClick={() => setSection(s.key)}
-                className={`flex shrink-0 items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors ${
+                onClick={(e) => pick(s.key, e.currentTarget)}
+                className={`flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors ${
                   section === s.key ? "bg-green-50 text-[#2d583d]" : "text-gray-600 hover:bg-gray-100"
                 }`}
               >
-                <s.icon className="h-4 w-4" />
+                <s.icon className="h-4 w-4 shrink-0" />
                 {s.label}
               </button>
             ))}
           </nav>
 
-          <div className="min-w-0">
+          <div ref={contentRef} className="min-w-0 scroll-mt-32 lg:scroll-mt-28">
             {section === "store" && (
               <StoreDetailsForm
                 key={JSON.stringify(data.store)}

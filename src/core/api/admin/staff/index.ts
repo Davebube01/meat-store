@@ -11,6 +11,10 @@ export interface StaffMember {
   is_active: boolean;
   created_at: string;
   last_signed_in_at: string | null;
+  /** Still using the password an owner gave them (new account or reset). */
+  password_is_temporary: boolean;
+  /** Devices they're signed in to the admin on right now. */
+  active_sessions: number;
 }
 
 export interface StaffList {
@@ -40,6 +44,10 @@ export const updateStaff = async (
 
 export const resetStaffPassword = async (id: string, password: string): Promise<void> =>
   fetchClient<void>(`/admin/staff/${id}/reset-password`, { method: "POST", body: JSON.stringify({ password }) });
+
+/** Ends every admin session they have (e.g. a lost phone). They can sign straight back in. */
+export const signOutStaff = async (id: string): Promise<void> =>
+  fetchClient<void>(`/admin/staff/${id}/sign-out`, { method: "POST" });
 
 export const changeOwnPassword = async (current_password: string, new_password: string): Promise<void> =>
   fetchClient<void>("/admin/auth/change-password", { method: "POST", body: JSON.stringify({ current_password, new_password }) });

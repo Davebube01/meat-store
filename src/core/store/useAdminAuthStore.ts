@@ -11,6 +11,8 @@ export interface AdminUser {
   role?: string;
   /** What this role may do; the admin UI hides what isn't listed. */
   permissions?: string[];
+  /** Signed in with a password an owner set; nagged to change it. */
+  password_is_temporary?: boolean;
 }
 
 interface AdminAuthState {

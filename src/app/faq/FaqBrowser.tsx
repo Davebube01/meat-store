@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { MapPin, Search, X } from "lucide-react";
 import { FAQ_SECTIONS, type Faq } from "@/core/api/user/faq";
@@ -42,6 +42,42 @@ function Zones({ zones }: { zones: DeliveryZone[] }) {
   );
 }
 
+// Sections scroll to 8rem below the top (scroll-mt-32, under the sticky
+// header), so a section counts as "being read" once its top passes just below that.
+const ACTIVE_LINE_PX = 140;
+
+/** The section currently being read: the last one whose top has scrolled past the line. */
+function useActiveSection(keys: string[]) {
+  const [active, setActive] = useState<string | null>(keys[0] ?? null);
+
+  useEffect(() => {
+    if (keys.length === 0) return;
+    // A handful of sections: measuring them on every scroll is cheap.
+    const update = () => {
+      // At the very bottom a short last section can never reach the line; treat it as read.
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) {
+        setActive(keys[keys.length - 1]);
+        return;
+      }
+      let current = keys[0];
+      for (const key of keys) {
+        const el = document.getElementById(key);
+        if (el && el.getBoundingClientRect().top <= ACTIVE_LINE_PX) current = key;
+      }
+      setActive(current);
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [keys]);
+
+  return [active, setActive] as const;
+}
+
 export function FaqBrowser({ faqs, zones }: { faqs: Faq[]; zones: DeliveryZone[] }) {
   const [query, setQuery] = useState("");
   const term = query.trim().toLowerCase();
@@ -55,6 +91,8 @@ export function FaqBrowser({ faqs, zones }: { faqs: Faq[]; zones: DeliveryZone[]
     );
   }, [faqs, term]);
   const count = sections.reduce((n, s) => n + s.items.length, 0);
+  const sectionKeys = useMemo(() => sections.map((s) => s.key), [sections]);
+  const [activeSection, setActiveSection] = useActiveSection(sectionKeys);
 
   return (
     <>
@@ -86,7 +124,17 @@ export function FaqBrowser({ faqs, zones }: { faqs: Faq[]; zones: DeliveryZone[]
             <ul className="sticky top-32 space-y-1">
               {sections.map((s) => (
                 <li key={s.key}>
-                  <a href={`#${s.key}`} className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-[#f4f7f5] hover:text-[#2d583d]">
+                  <a
+                    href={`#${s.key}`}
+                    onClick={() => setActiveSection(s.key)}
+                    aria-current={activeSection === s.key ? "true" : undefined}
+                    className={cn(
+                      "block rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-colors",
+                      activeSection === s.key
+                        ? "border-[#3f7a55] bg-[#f4f7f5] text-[#2d583d]"
+                        : "border-transparent text-gray-600 hover:bg-[#f4f7f5] hover:text-[#2d583d]",
+                    )}
+                  >
                     {s.label}
                   </a>
                 </li>
